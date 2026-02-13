@@ -1,0 +1,33 @@
+{
+  "name": "archgen",
+  "version": "0.1.0",
+  "description": "Generate production-ready project structures",
+  "main": "dist/index.js",
+  "bin": {
+    "archgen": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "test": "archgen create test-app"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [],
+  "author": "Kidkender(Duck)",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.1",
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.2.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "fs-extra": "^11.3.3",
+    "prompts": "^2.4.2"
+  }
+}
