@@ -12,3 +12,7 @@ class UserResponse(UserBase, TimestampSchema):
     """Schema for user response"""
     id: int
     is_active: bool
+
+class UserCreate(UserBase):
+    """Schema for creating user"""
+    password: str

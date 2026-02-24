@@ -1,4 +1,5 @@
 import { NodePlugin } from "../plugins/node";
+import { PythonPlugin } from "../plugins/python";
 import { Plugin } from "../types";
 
 class PluginRegistry {
@@ -11,6 +12,7 @@ class PluginRegistry {
 
   private registerDefaults() {
     this.register("node", new NodePlugin());
+    this.register("python", new PythonPlugin())
   }
 
   register(name: string, plugin: Plugin) {
