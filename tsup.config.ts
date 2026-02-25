@@ -1,4 +1,6 @@
+import { dirname } from "path";
 import { defineConfig } from "tsup";
+import { fileURLToPath } from "url";
 
 export default defineConfig({
   entry: ["index.ts"],
@@ -23,6 +25,8 @@ export default defineConfig({
     const fs = require("fs");
     const path = require("path");
 
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
     await fs.copy(
       path.join(__dirname, "src/plugins/node/template"),
       path.join(__dirname, "dist/plugins/node/template")
