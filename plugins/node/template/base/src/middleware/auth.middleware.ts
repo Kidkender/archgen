@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import P from "pino";
 import jwt from "jsonwebtoken"
 import { env } from "../config/env";
 

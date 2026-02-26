@@ -1,6 +1,14 @@
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import Fastify from "fastify";
+import rateLimit from "@fastify/rate-limit";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
+import routes from "./routes";
+import { errorHandler } from "./middleware/error.middleware";
+
 
 export async function buildApp() {
   const app = Fastify({

@@ -15,7 +15,7 @@ async function start() {
     logger.info(`Server started on port ${env.PORT}`);
     logger.info(`API Docs: http://localhost:${env.PORT}/docs`);
   } catch (error) {
-    logger.error(error);
+    logger.error(error as Error);
     process.exit(1)
   }
 }
