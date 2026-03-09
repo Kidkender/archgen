@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service";
-import { LoginInput, RegisterInput } from "./auth.dto";
+import { LoginInput, RegisterInput } from "./auth.schema";
 
 
 const authService = new AuthService();

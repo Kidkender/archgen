@@ -5,7 +5,7 @@ import {
   createUserSchema,
   updateUserSchema,
   getUserQuerySchema,
-} from './user.dto';
+} from './user.schema';
 import z from 'zod';
 
 const controller = new UserController();

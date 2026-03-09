@@ -1,6 +1,6 @@
 import prisma from "../../config/database";
 import { logger } from "../../config/logger";
-import { CreateUserInput, UpdateUserInput } from "./user.dto";
+import { CreateUserInput, UpdateUserInput } from "./user.schema";
 import bcrypt from "bcrypt";
 
 export class UserService {

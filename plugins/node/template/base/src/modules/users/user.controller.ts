@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "./user.service";
-import { CreateUserInput, GetUserQuery, UpdateUserInput } from "./user.dto";
+import { CreateUserInput, GetUserQuery, UpdateUserInput } from "./user.schema";
 import { ERROR_USER_NOT_FOUND } from "../../constants/error-codes";
 
 

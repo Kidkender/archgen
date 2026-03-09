@@ -1,6 +1,6 @@
 import { AuthController } from "./auth.controller";
 import { FastifyInstance } from "fastify";
-import { loginSchema, registerSchema } from "./auth.dto";
+import { loginSchema, registerSchema } from "./auth.schema";
 
 
 const controller = new AuthController();

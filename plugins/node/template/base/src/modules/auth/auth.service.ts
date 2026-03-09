@@ -1,7 +1,7 @@
 import { env } from "../../config";
 import prisma from "../../config/database";
 import { ERROR_USER_ALREADY_EXISTS } from "../../constants";
-import { LoginInput, RegisterInput, TokenResponse } from "./auth.dto";
+import { LoginInput, RegisterInput, TokenResponse } from "./auth.schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type { StringValue } from "ms";
