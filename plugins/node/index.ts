@@ -20,8 +20,8 @@ export class NodePlugin implements Plugin {
   async generate(projectName: string, options: GenerateOptions): Promise<void> {
     const outputPath = path.join(process.cwd(), projectName);
 
-    const templateBasePath = path.join(__dirname, "template", "base");
-    const addonsPath = path.join(__dirname, "template", "addons");
+    const templateBasePath = path.join(__dirname, "plugins/node/template", "base");
+    const addonsPath = path.join(__dirname, "plugins/node/template", "addons");
 
     logger.step("Generate Node.js Typescript project...");
 
@@ -51,5 +51,21 @@ export class NodePlugin implements Plugin {
     }
 
     logger.success(`Project "${projectName}" generated successfully`);
+    this.showNextSteps(projectName, options);
+  }
+
+
+  private showNextSteps(projectName: string, options: GenerateOptions): void {
+    console.log("");
+    logger.info("Next steps:");
+    console.log(`  cd ${projectName}`);
+    console.log(`  npm install`);
+    console.log(`  cp .env.example .env`);
+    if (options.docker) {
+      console.log(`  docker-compose up -d`);
+    } else {
+      console.log(`  npm run dev`);
+    }
+    console.log("");
   }
 }

@@ -27,9 +27,14 @@ export class ArchGen {
       }
 
       logger.info(`Creating project: ${projectName}`);
+
+      const start = performance.now();
+
       await plugin.generate(projectName, options);
 
-      this.showNextSteps(projectName);
+      const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+
+      logger.success(`🎉 Project created successfully! (${elapsed}s)`);
     } catch (error) {
       logger.error(`Failed to create project: ${(error as Error).message}`);
       process.exit(1);
@@ -47,14 +52,4 @@ export class ArchGen {
     }
   }
 
-  private showNextSteps(projectName: string): void {
-    console.log("");
-    logger.success("🎉 Project created successfully!");
-    console.log("");
-    logger.info("Next steps:");
-    console.log(`  cd ${projectName}`);
-    console.log(`  npm install`);
-    console.log(`  npm run dev`);
-    console.log("");
-  }
 }

@@ -19,8 +19,8 @@ export class PythonPlugin implements Plugin {
   async generate(projectName: string, options: GenerateOptions): Promise<void> {
     const outputPath = path.join(process.cwd(), projectName)
 
-    const templateBasePath = path.join(__dirname, "template", "base")
-    const addonsPath = path.join(__dirname, "template", "addons")
+    const templateBasePath = path.join(__dirname, "plugins/python/template", "base")
+    const addonsPath = path.join(__dirname, "plugins/python/template", "addons")
 
     logger.step("Generating Python FastAPI Project")
 
@@ -31,7 +31,6 @@ export class PythonPlugin implements Plugin {
       DESCRIPTION: options.description || "A FastAPI project with production-ready features"
     }
 
-    // 1. Process base template
     logger.step("Processing base template...")
     await this.templateEngine.processTemplate(
       templateBasePath,
@@ -39,7 +38,6 @@ export class PythonPlugin implements Plugin {
       variables
     )
 
-    // 2. Process addons template
     if (options.docker) {
       logger.step("Adding Docker support...")
       const dockerAddon = path.join(addonsPath, "docker")
@@ -54,23 +52,23 @@ export class PythonPlugin implements Plugin {
 
     logger.success(`Project ${projectName} generated successfully`)
 
-    this.showNextSteps(projectName)
+    this.showNextSteps(projectName, options)
   }
 
-  private showNextSteps(projectName: string): void {
-    console.log('');
-    logger.info('Next steps:');
+  private showNextSteps(projectName: string, options: GenerateOptions): void {
+    console.log("");
+    logger.info("Next steps:");
     console.log(`  cd ${projectName}`);
-    console.log(`  python -m venv venv`);
-    console.log(`  source venv/bin/activate  # On Windows: venv\\Scripts\\activate`);
-    console.log(`  pip install -e .`);
-    console.log(`  cp .env.example .env`);
-    console.log(`  alembic upgrade head`);
-    console.log(`  uvicorn main:app --reload`);
-    console.log('');
-    logger.info('Or use Docker:');
-    console.log(`  cd ${projectName}`);
-    console.log(`  docker-compose up -d`);
-    console.log('');
+    if (options.docker) {
+      console.log(`  docker-compose up -d`);
+    } else {
+      console.log(`  python -m venv venv`);
+      console.log(`  source venv/bin/activate  # Windows: venv\\Scripts\\activate`);
+      console.log(`  pip install -e .`);
+      console.log(`  cp .env.example .env`);
+      console.log(`  alembic upgrade head`);
+      console.log(`  uvicorn main:app --reload`);
+    }
+    console.log("");
   }
 }

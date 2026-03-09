@@ -2,6 +2,9 @@ import fs from "fs-extra";
 import path from "path";
 import { logger } from "./logger";
 
+
+const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "__pycache__", ".venv", "venv"]);
+
 export class FileSystem {
   /**
    * Check if path exists
@@ -49,6 +52,8 @@ export class FileSystem {
     const files = await fs.readdir(dirPath);
 
     for (const file of files) {
+      if (SKIP_DIRS.has(file)) continue;
+
       const fullPath = path.join(dirPath, file);
       const stat = await fs.stat(fullPath);
 
