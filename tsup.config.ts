@@ -1,4 +1,5 @@
-import { dirname } from "path";
+import { copy } from "fs-extra";
+import { dirname, join } from "path";
 import { defineConfig } from "tsup";
 import { fileURLToPath } from "url";
 
@@ -11,32 +12,29 @@ export default defineConfig({
   sourcemap: false,
   shims: true,
   loader: {
-    '.py': 'copy',
-    '.md': 'copy',
-    '.json': 'copy',
-    '.toml': 'copy',
-    '.ini': 'copy',
-    '.yml': 'copy',
-    '.yaml': 'copy',
-    '.txt': 'copy',
-    '.example': 'copy',
+    ".py": "copy",
+    ".md": "copy",
+    ".json": "copy",
+    ".toml": "copy",
+    ".ini": "copy",
+    ".yml": "copy",
+    ".yaml": "copy",
+    ".txt": "copy",
+    ".example": "copy",
   },
   onSuccess: async () => {
-    const fs = require("fs");
-    const path = require("path");
+    const __dirname = dirname(fileURLToPath(import.meta.url));
 
-    const __filename = fileURLToPath(import.meta.url)
-    const __dirname = dirname(__filename)
-    await fs.copy(
-      path.join(__dirname, "src/plugins/node/template"),
-      path.join(__dirname, "dist/plugins/node/template")
-    )
+    await copy(
+      join(__dirname, "plugins/node/template"),
+      join(__dirname, "dist/plugins/node/template"),
+    );
 
-    await fs.copy(
-      path.join(__dirname, "src/plugins/python/template"),
-      path.join(__dirname, "dist/plugins/python/template")
-    )
+    await copy(
+      join(__dirname, "plugins/python/template"),
+      join(__dirname, "dist/plugins/python/template"),
+    );
 
-    console.log("template files copies")
-  }
+    console.log("✓ Template files copied");
+  },
 });
