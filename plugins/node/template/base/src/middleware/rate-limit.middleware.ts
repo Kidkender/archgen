@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import redis from "../config/redis";
+import redis from "../core/redis";
 import { env } from "../config";
 import { ERROR_RATE_LIMIT_EXCEEDED } from "../constants";
 

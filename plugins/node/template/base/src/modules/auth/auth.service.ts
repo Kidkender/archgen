@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import type { StringValue } from "ms";
 
 export class AuthService {
+
   async register(data: RegisterInput) {
     const existUser = await prisma.user.findFirst({
       where: {

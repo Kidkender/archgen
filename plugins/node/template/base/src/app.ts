@@ -1,5 +1,5 @@
 import { env } from "./config/env";
-import { logger } from "./config/logger";
+import { logger } from "./core/logger";
 import Fastify from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";

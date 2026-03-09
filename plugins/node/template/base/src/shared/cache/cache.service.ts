@@ -1,5 +1,5 @@
-import redis from '../../config/redis';
-import { logger } from '../../config/logger';
+import redis from '../../core/redis';
+import { logger } from '../../core/logger';
 
 export class CacheService {
   /**

@@ -1,35 +1,39 @@
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 import { env } from "../config/env";
-
+import { AppException } from "../core";
 
 export function errorHandler(
-  error: FastifyError,
+  error: FastifyError | Error,
   request: FastifyRequest,
   reply: FastifyReply
 ) {
+  if (error instanceof AppException) {
+    return reply.status(error.statusCode).send(error.toJSON());
+  }
+
   if (error instanceof ZodError) {
     return reply.status(400).send({
-      success: false,
-      error: "Validation Error",
-      details: error.errors
-    })
+      error_code: "error.validation.invalid-input",
+      message: "Validation failed",
+      details: { fields: error.errors },
+    });
   }
 
-  if (error.validation) {
+  const fastifyError = error as FastifyError;
+  if (fastifyError.validation) {
     return reply.status(400).send({
-      success: false,
-      error: "Validation Error",
-      details: error.validation
-    })
+      error_code: "error.validation.invalid-input",
+      message: "Validation failed",
+      details: { fields: fastifyError.validation },
+    });
   }
-
 
   request.log.error(error);
 
-  return reply.status(error.statusCode || 500).send({
-    success: false,
-    error: error.message,
-    ...(env.NODE_ENV === "development" && { stack: error.stack })
-  })
+  return reply.status(fastifyError.statusCode || 500).send({
+    error_code: "error.internal.unexpected",
+    message: "An unexpected error occurred",
+    ...(env.NODE_ENV === "development" && { details: { stack: error.stack } }),
+  });
 }

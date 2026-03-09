@@ -1,5 +1,5 @@
 import prisma from "../../config/database";
-import { logger } from "../../config/logger";
+import { logger } from "../../core/logger";
 import { CreateUserInput, UpdateUserInput } from "./user.schema";
 import bcrypt from "bcrypt";
 

@@ -1,7 +1,7 @@
 import { buildApp } from "./app";
 import prisma from "./config/database";
 import { env } from "./config/env";
-import { logger } from "./config/logger";
+import { logger } from "./core/logger";
 
 async function start() {
   try {
