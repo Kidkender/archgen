@@ -42,7 +42,7 @@ export class AuthService {
     logger.info(`User registered: ${user.email}`)
   }
 
-  async login(data: LoginInput): Promise<{ user: any } & TokenResponse> {
+  async login(data: LoginInput): Promise<TokenResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email }
     })
@@ -59,15 +59,7 @@ export class AuthService {
 
     const token = this.generateToken(user.id, user.email);
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        createdAt: user.createdAt
-      },
-      ...token
-    }
+    return token
   }
 
   private generateToken(userId: number, email: string): TokenResponse {

@@ -15,7 +15,7 @@ import responsePlugin from "./plugins/response.plugin";
 
 export async function buildApp() {
   const app = Fastify({
-    logger
+    loggerInstance: logger
   });
 
   app.setValidatorCompiler(validatorCompiler);
