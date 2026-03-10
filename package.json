@@ -1,7 +1,7 @@
 {
   "name": "archgen",
   "version": "0.1.0",
-  "description": "Generate production-ready project structures",
+  "description": "Generate production-ready Node.js and Python project structures in seconds",
   "main": "dist/index.js",
   "bin": {
     "archgen": "./dist/index.js"
@@ -9,14 +9,38 @@
   "scripts": {
     "dev": "tsup --watch",
     "build": "tsup",
-    "test": "archgen create test-app"
+    "prepublishOnly": "pnpm build"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
-  "keywords": [],
+  "keywords": [
+    "cli",
+    "scaffold",
+    "boilerplate",
+    "generator",
+    "nodejs",
+    "fastapi",
+    "typescript",
+    "python",
+    "template",
+    "archgen"
+  ],
   "author": "Kidkender(Duck)",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kidkender/archgen"
+  },
+  "homepage": "https://github.com/kidkender/archgen#readme",
+  "bugs": {
+    "url": "https://github.com/kidkender/archgen/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "packageManager": "pnpm@10.8.1",
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
@@ -28,7 +52,6 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "fs-extra": "^11.3.3",
-    "path": "^0.12.7",
     "prompts": "^2.4.2"
   }
 }

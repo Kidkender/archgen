@@ -7,10 +7,12 @@ import {
   getUserQuerySchema,
 } from './user.schema';
 import z from 'zod';
+import { UserService } from './user.service';
 
-const controller = new UserController();
 
 export default async function userRoutes(app: FastifyInstance) {
+  const service = new UserService(app.prisma);
+  const controller = new UserController(service);
 
   app.post(
     '/',

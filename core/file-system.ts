@@ -28,6 +28,13 @@ export class FileSystem {
   }
 
   /**
+   * Remove directory and all its contents
+   */
+  async removeDir(targetPath: string): Promise<void> {
+    await fs.remove(targetPath);
+  }
+
+  /**
    * Write file with content
    */
   async writeFile(filePath: string, content: string): Promise<void> {

@@ -1,19 +1,18 @@
-import { FastifyReply, FastifyRequest } from "fastify";
-import { UserService } from "./user.service";
+
+import fastify, { FastifyReply, FastifyRequest } from "fastify";
 import { CreateUserInput, GetUserQuery, UpdateUserInput } from "./user.schema";
-import { ERROR_USER_NOT_FOUND } from "../../constants/error-codes";
-
-
-const userService = new UserService()
+import { UserService } from "./user.service";
 
 export class UserController {
+
+  constructor(private userService: UserService) { }
+
   async create(
     request: FastifyRequest<{ Body: CreateUserInput }>,
     reply: FastifyReply
   ) {
-    await userService.createUser(request.body);
-
-    return reply.status(201).send({ success: true })
+    await this.userService.createUser(request.body);
+    return reply.created();
   }
 
 
@@ -22,33 +21,18 @@ export class UserController {
     reply: FastifyReply
   ) {
     const id = parseInt(request.params.id);
-    const user = await userService.getUserById(id);
-
-    if (!user) {
-      return reply.status(404).send({
-        success: false,
-        message: ERROR_USER_NOT_FOUND
-      })
-    }
-
-    return reply.send({
-      success: true,
-      data: user
-    })
+    const user = await this.userService.getUserById(id);
+    return reply.success(user);
   }
-
 
   async list(
     request: FastifyRequest<{ Querystring: GetUserQuery }>,
     reply: FastifyReply
   ) {
     const { page, limit } = request.query;
-    const result = await userService.listUsers(page, limit);
+    const result = await this.userService.listUsers(page, limit);
 
-    return reply.send({
-      success: true,
-      ...result,
-    });
+    return reply.paginated(result.data, result.meta)
   }
 
   async update(
@@ -56,12 +40,9 @@ export class UserController {
     reply: FastifyReply
   ) {
     const id = parseInt(request.params.id);
-    const user = await userService.updateUser(id, request.body);
+    const user = await this.userService.updateUser(id, request.body);
 
-    return reply.send({
-      success: true,
-      data: user,
-    });
+    return reply.success(user);
   }
 
   async delete(
@@ -69,8 +50,8 @@ export class UserController {
     reply: FastifyReply
   ) {
     const id = parseInt(request.params.id);
-    await userService.deleteUser(id);
+    await this.userService.deleteUser(id);
 
-    return reply.status(204).send();
+    return reply.noContent();
   }
 }

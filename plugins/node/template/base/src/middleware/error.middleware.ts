@@ -1,7 +1,9 @@
+
 import { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 import { env } from "../config/env";
-import { AppException } from "../core";
+import { AppException } from "../core/exception";
+import { logger } from "../core/logger";
 
 export function errorHandler(
   error: FastifyError | Error,
@@ -9,6 +11,7 @@ export function errorHandler(
   reply: FastifyReply
 ) {
   if (error instanceof AppException) {
+    logger.warn({ err: error.message, statusCode: error.statusCode }, `${request.method} ${request.url}`);
     return reply.status(error.statusCode).send(error.toJSON());
   }
 
@@ -16,7 +19,7 @@ export function errorHandler(
     return reply.status(400).send({
       error_code: "error.validation.invalid-input",
       message: "Validation failed",
-      details: { fields: error.errors },
+      details: { fields: error.issues },
     });
   }
 
@@ -29,7 +32,7 @@ export function errorHandler(
     });
   }
 
-  request.log.error(error);
+  logger.error({ err: error.message, stack: error.stack }, `${request.method} ${request.url}`);
 
   return reply.status(fastifyError.statusCode || 500).send({
     error_code: "error.internal.unexpected",

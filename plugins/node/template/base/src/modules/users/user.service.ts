@@ -1,13 +1,18 @@
 import prisma from "../../config/database";
 import { logger } from "../../core/logger";
+import { hashPassword } from "../../shared/utils";
 import { CreateUserInput, UpdateUserInput } from "./user.schema";
-import bcrypt from "bcrypt";
+
+import { PrismaClient } from "@prisma/client";
 
 export class UserService {
-  async createUser(data: CreateUserInput) {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+  constructor(private prisma: PrismaClient) { }
 
-    const user = await prisma.user.create({
+  async createUser(data: CreateUserInput) {
+
+    const hashedPassword = await hashPassword(data.password);
+
+    const user = await this.prisma.user.create({
       data: {
         email: data.email,
         username: data.username,
@@ -19,7 +24,7 @@ export class UserService {
 
 
   async getUserById(id: number) {
-    const user = await prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -38,7 +43,7 @@ export class UserService {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany(
+      this.prisma.user.findMany(
         {
           skip, take: limit,
           select: {
@@ -51,7 +56,7 @@ export class UserService {
         },
 
       ),
-      prisma.user.count()
+      this.prisma.user.count()
     ])
 
     return {
@@ -69,12 +74,11 @@ export class UserService {
     const updateData: any = { ...data }
 
     if (data.password) {
-      updateData.password = await bcrypt.hash(data.password, 10);
-
+      updateData.password = await hashPassword(data.password);
 
     }
 
-    const user = await prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id },
       data: updateData,
       select: {
@@ -90,7 +94,7 @@ export class UserService {
 
 
   async deleteUser(id: number) {
-    await prisma.user.delete({
+    await this.prisma.user.delete({
       where: { id }
     })
   }

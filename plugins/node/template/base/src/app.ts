@@ -1,6 +1,8 @@
+
 import { env } from "./config/env";
 import { logger } from "./core/logger";
 import Fastify from "fastify";
+import { serializerCompiler, validatorCompiler, jsonSchemaTransform } from "fastify-type-provider-zod";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -8,12 +10,16 @@ import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 import routes from "./routes";
 import { errorHandler } from "./middleware/error.middleware";
-
+import prismaPlugin from "./plugins/prisma.plugin";
+import responsePlugin from "./plugins/response.plugin";
 
 export async function buildApp() {
   const app = Fastify({
     logger
   });
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
 
   await app.register(cors, {
     origin: env.CORS_ORIGIN,
@@ -36,13 +42,16 @@ export async function buildApp() {
         title: "{PROJECT_NAME}",
         version: "1.0.0"
       }
-    }
+    },
+    transform: jsonSchemaTransform
   });
 
   await app.register(swaggerUi, {
     routePrefix: "/docs"
   })
 
+  await app.register(responsePlugin)
+  await app.register(prismaPlugin)
   await app.register(routes, { prefix: "/api/v1" })
 
   app.setErrorHandler(errorHandler)

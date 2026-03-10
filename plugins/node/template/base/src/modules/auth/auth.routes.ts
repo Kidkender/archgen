@@ -1,11 +1,12 @@
 import { AuthController } from "./auth.controller";
 import { FastifyInstance } from "fastify";
 import { loginSchema, registerSchema } from "./auth.schema";
+import { AuthService } from "./auth.service";
 
-
-const controller = new AuthController();
 
 export default async function authRoutes(app: FastifyInstance) {
+  const service = new AuthService(app.prisma);
+  const controller = new AuthController(service);
   app.post("/register", {
     schema: {
       body: registerSchema,
