@@ -1,5 +1,5 @@
 {
-  "name": "archgen",
+  "name": "@kidkender/archgen",
   "version": "1.0.0",
   "description": "Generate production-ready Node.js and Python project structures in seconds",
   "main": "dist/index.js",
