@@ -67,10 +67,10 @@ app.add_middleware(
 )
 
 # Custom middlewares
-app.middleware("http")(ErrorHandlingMiddleware)
-app.middleware("http")(LoggingMiddleware)
-app.middleware("http")(RateLimitMiddleware)
-app.middleware("http")(AuthenticationMiddleware)
+app.add_middleware(ErrorHandlingMiddleware)
+app.add_middleware(LoggingMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(AuthenticationMiddleware)
 
 app.state.settings = settings
 

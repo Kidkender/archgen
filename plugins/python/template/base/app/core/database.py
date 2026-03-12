@@ -1,4 +1,3 @@
-
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -20,10 +19,7 @@ engine = create_async_engine(
       pool_recycle=3600,
       echo=False,
       connect_args={
-          "keepalives": 1,
-          "keepalives_idle": 30,
-          "keepalives_interval": 10,
-          "keepalives_count": 5,
+          "statement_cache_size": 0,
       },
 )
 

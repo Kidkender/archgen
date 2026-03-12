@@ -1,7 +1,12 @@
 import logging
 
+import jwt
 from fastapi import Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+
+from app.constants.error_codes import ERROR_INVALID_CREDENTIALS, ERROR_TOKEN_INVALID
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +15,8 @@ PUBLIC_PATHS = [
     "/openapi.json",
     "/redoc",
     "/health",
+    "/api/v1/auth/register",
+    "/api/v1/auth/login",
 ]
 
 
@@ -18,65 +25,18 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         if request.url.path in PUBLIC_PATHS:
             return await call_next(request)
 
-        if request.method == "OPTIONS":
-            return await call_next(request)
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer"):
+            return JSONResponse(status_code=401, content={"detail": ERROR_INVALID_CREDENTIALS})
+
+        token = auth_header.split(" ")[1]
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            request.state.user_id = payload.get("sub")
+            request.state.email = payload.get("email")
+        except jwt.ExpiredSignatureError:
+            return JSONResponse(status_code=401, content={"detail": ERROR_TOKEN_INVALID})
+        except jwt.InvalidTokenError:
+            return JSONResponse(status_code=401, content={"detail": ERROR_TOKEN_INVALID})
 
         return await call_next(request)
-
-        # api_key = request.headers.get("X-API-Key")
-
-        # if not api_key:
-        #     logger.warning(
-        #         f"  Missing API key for {request.method} {request.url.path} "
-        #         f"from {request.client.host if request.client else 'unknown'}"
-        #     )
-        #     return JSONResponse(
-        #         status_code=401,
-        #         content={
-        #             "error_code": "error.auth.missing-key",
-        #             "message": "Authentication required. Include X-API-Key header.",
-        #             "details": {
-        #                 "header": "X-API-Key",
-        #                 "example": "X-API-Key: ak_your_api_key_here"
-        #             }
-        #         }
-        #     )
-
-        # # Validate key
-        # db = SessionLocal()
-        # try:
-        #     api_key_service = APIKeyService(db)
-        #     db_key = api_key_service.validate_key(api_key)
-
-        #     if not db_key:
-        #         logger.warning(
-        #             f"  Invalid API key for {request.method} {request.url.path} "
-        #             f"from {request.client.host if request.client else 'unknown'}"
-        #         )
-        #         return JSONResponse(
-        #             status_code=401,
-        #             content={
-        #                 "error_code": "error.auth.invalid-key",
-        #                 "message": "Invalid or expired API key",
-        #                 "details": {
-        #                     "hint": "Check that your API key is correct and active"
-        #                 }
-        #             }
-        #         )
-
-        #     # Attach key info to request state for use in route handlers
-        #     request.state.api_key = db_key
-        #     request.state.api_key_name = db_key.name
-
-        #     logger.debug(
-        #         f" Authenticated: {request.method} {request.url.path} "
-        #         f"with key '{db_key.name}' (ID: {db_key.id})"
-        #     )
-
-        #     # Continue to route handler
-        #     response = await call_next(request)
-
-        #     return response
-
-        # finally:
-        #     db.close()

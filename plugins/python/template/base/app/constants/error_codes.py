@@ -8,3 +8,8 @@ ERROR_SESSION_NOT_FOUND = "error.session.not-found"
 
 # User
 ERROR_USER_NOT_FOUND = "error.user.not-found"
+ERROR_USER_EMAIL_ALREADY_EXISTS = "error.user.email-already-exists"
+
+# Auth
+ERROR_INVALID_CREDENTIALS = "error.auth.invalid-credentials"
+ERROR_TOKEN_INVALID = "error.auth.token-invalid"
