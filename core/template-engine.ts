@@ -1,6 +1,14 @@
 import path from "path";
 import { FileSystem } from "./file-system";
 
+const BINARY_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".ico", ".bmp", ".webp",
+  ".woff", ".woff2", ".ttf", ".eot", ".otf",
+  ".pdf", ".zip", ".gz", ".tar", ".jar",
+  ".exe", ".dll", ".so", ".dylib", ".node",
+  ".mp3", ".mp4", ".wav", ".ogg", ".webm",
+]);
+
 export interface TemplateVariables {
   PROJECT_NAME: string;
   AUTHOR?: string;
@@ -13,6 +21,10 @@ export class TemplateEngine {
 
   constructor() {
     this.fs = new FileSystem();
+  }
+
+  private isBinary(filePath: string): boolean {
+    return BINARY_EXTENSIONS.has(path.extname(filePath).toLowerCase());
   }
 
   /**
@@ -44,19 +56,33 @@ export class TemplateEngine {
   }
 
   /**
-   * Process entire template folder
+   * Process entire template folder.
+   * When dryRun is true, returns list of destination paths without writing.
    */
   async processTemplate(
     templatePath: string,
     outPath: string,
     variables: TemplateVariables,
-  ): Promise<void> {
+    dryRun = false,
+  ): Promise<string[]> {
     const files = await this.fs.getAllFiles(templatePath);
+    const destPaths: string[] = [];
+
     for (const file of files) {
       const relativePath = path.relative(templatePath, file);
-      const destPath = path.join(outPath, relativePath);
+      const processedRelativePath = this.replaceInString(relativePath, variables);
+      const destPath = path.join(outPath, processedRelativePath);
+      destPaths.push(destPath);
 
-      await this.processFile(file, destPath, variables);
+      if (!dryRun) {
+        if (this.isBinary(file)) {
+          await this.fs.copyFile(file, destPath);
+        } else {
+          await this.processFile(file, destPath, variables);
+        }
+      }
     }
+
+    return destPaths;
   }
 }

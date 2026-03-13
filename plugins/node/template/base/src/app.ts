@@ -39,7 +39,7 @@ export async function buildApp() {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: "{PROJECT_NAME}",
+        title: "{{PROJECT_NAME}}",
         version: "1.0.0"
       }
     },

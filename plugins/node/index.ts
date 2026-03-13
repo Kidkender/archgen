@@ -8,6 +8,7 @@ import { nodeConfig } from "./config";
 export class NodePlugin implements Plugin {
   name = nodeConfig.name;
   description = nodeConfig.description;
+  addons = nodeConfig.addons;
 
   private templateEngine: TemplateEngine;
   private fs: FileSystem;
@@ -31,23 +32,31 @@ export class NodePlugin implements Plugin {
       DESCRIPTION: options.description || "A Node.js Typescript project",
     };
 
-    logger.step("Processing base template...");
-    await this.templateEngine.processTemplate(
-      templateBasePath,
-      outputPath,
-      variables,
-    );
+    const dryRun = options.dryRun ?? false;
+
+    logger.step(dryRun ? "Previewing base template files..." : "Processing base template...");
+    const files = await this.templateEngine.processTemplate(templateBasePath, outputPath, variables, dryRun);
 
     if (options.docker) {
-      logger.step("Adding Docker support...");
+      logger.step(dryRun ? "Previewing Docker files..." : "Adding Docker support...");
       const dockerAddon = path.join(addonsPath, "docker");
-      await this.fs.copyFolder(dockerAddon, outputPath);
+      const dockerFiles = await this.templateEngine.processTemplate(dockerAddon, outputPath, variables, dryRun);
+      files.push(...dockerFiles);
     }
 
     if (options.testing) {
-      logger.step("Adding testing setup...");
+      logger.step(dryRun ? "Previewing testing files..." : "Adding testing setup...");
       const testingAddon = path.join(addonsPath, "testing");
-      await this.fs.copyFolder(testingAddon, outputPath);
+      const testFiles = await this.templateEngine.processTemplate(testingAddon, outputPath, variables, dryRun);
+      files.push(...testFiles);
+    }
+
+    if (dryRun) {
+      console.log("");
+      logger.info(`Would create ${files.length} files in ./${projectName}:`);
+      files.forEach((f) => console.log(`  ${f}`));
+      console.log("");
+      return;
     }
 
     logger.success(`Project "${projectName}" generated successfully`);

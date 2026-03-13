@@ -46,5 +46,11 @@ export async function promptMissingOptions(
     },
   });
 
+  const isCancelled = questions.some((q) => answers[q.name as string] === undefined);
+  if (isCancelled) {
+    console.log("\nCancelled.");
+    process.exit(0);
+  }
+
   return { ...options, ...answers };
 }

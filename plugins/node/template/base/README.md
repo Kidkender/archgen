@@ -20,7 +20,7 @@
 ### Prerequisites
 
 - Node.js 20+
-- PostgreSQL 15+
+- MySQL 8+ / MariaDB 11+
 - Redis 7+ (optional)
 
 ### Installation

@@ -4,11 +4,14 @@ export interface GenerateOptions {
   testing?: boolean;
   author?: string;
   description?: string;
+  force?: boolean;
+  dryRun?: boolean;
 }
 
 export interface Plugin {
   name: string;
   description: string;
+  addons?: string[];
   generate(projectName: string, options: GenerateOptions): Promise<void>;
 }
 

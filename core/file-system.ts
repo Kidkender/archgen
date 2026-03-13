@@ -50,6 +50,14 @@ export class FileSystem {
   }
 
   /**
+   * Copy a single file verbatim (byte-for-byte, no encoding)
+   */
+  async copyFile(source: string, dest: string): Promise<void> {
+    await fs.ensureDir(path.dirname(dest));
+    await fs.copyFile(source, dest);
+  }
+
+  /**
    * Get all files in directory recursively
    */
   async getAllFiles(

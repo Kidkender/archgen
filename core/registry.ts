@@ -26,6 +26,15 @@ class PluginRegistry {
   list(): string[] {
     return Array.from(this.plugins.keys());
   }
+
+  listDetailed(): Array<{ key: string; name: string; description: string; addons: string[] }> {
+    return Array.from(this.plugins.entries()).map(([key, plugin]) => ({
+      key,
+      name: plugin.name,
+      description: plugin.description,
+      addons: plugin.addons ?? [],
+    }));
+  }
 }
 
 export const registry = new PluginRegistry();

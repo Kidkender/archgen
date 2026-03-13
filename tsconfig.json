@@ -1,8 +1,15 @@
 {
   "compilerOptions": {
+    "strict": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
-    "target": "esnext"
+    "target": "esnext",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "outDir": "dist"
   },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist", "plugins", "venv"]
 }
