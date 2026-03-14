@@ -6,6 +6,7 @@ export interface GenerateOptions {
   description?: string;
   force?: boolean;
   dryRun?: boolean;
+  database?: string;
 }
 
 export interface Plugin {

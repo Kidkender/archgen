@@ -33,13 +33,21 @@ export class NodePlugin implements Plugin {
     };
 
     const dryRun = options.dryRun ?? false;
+    const usePostgres = options.database === "postgresql";
 
     logger.step(dryRun ? "Previewing base template files..." : "Processing base template...");
     const files = await this.templateEngine.processTemplate(templateBasePath, outputPath, variables, dryRun);
 
+    if (usePostgres) {
+      logger.step("Applying PostgreSQL configuration...");
+      const pgAddon = path.join(addonsPath, "database", "postgresql");
+      const pgFiles = await this.templateEngine.processTemplate(pgAddon, outputPath, variables, dryRun);
+      files.push(...pgFiles);
+    }
+
     if (options.docker) {
       logger.step(dryRun ? "Previewing Docker files..." : "Adding Docker support...");
-      const dockerAddon = path.join(addonsPath, "docker");
+      const dockerAddon = path.join(addonsPath, usePostgres ? "docker-pg" : "docker");
       const dockerFiles = await this.templateEngine.processTemplate(dockerAddon, outputPath, variables, dryRun);
       files.push(...dockerFiles);
     }

@@ -1,4 +1,41 @@
-node_modules
-/src/generated/prisma
-package-lock.json
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment
 .env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# Runtime
+pids/
+*.pid
+*.seed
+
+# Database
+*.db
+*.sqlite
+/src/generated/prisma
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Lock files (keep only one)
+package-lock.json
+yarn.lock

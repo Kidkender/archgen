@@ -19,6 +19,18 @@ export async function promptMissingOptions(
     });
   }
 
+  if (!options.database && (!options.language || options.language === "node")) {
+    questions.push({
+      type: "select",
+      name: "database",
+      message: "Select a database:",
+      choices: [
+        { title: "MySQL / MariaDB", value: "mysql" },
+        { title: "PostgreSQL", value: "postgresql" },
+      ],
+    });
+  }
+
   if (!options.docker) {
     questions.push({
       type: "confirm",
