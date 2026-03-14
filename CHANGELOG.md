@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Path traversal explicitly prevented in project name handling
 
 ### Added
+- Database choice for Node.js: MySQL/MariaDB (default) or PostgreSQL via `--database` flag or interactive prompt
+- PostgreSQL template overlay: `@prisma/adapter-pg`, `PrismaPg` adapter, `schema.prisma`, `.env.example`, `package.json`
+- Separate `docker-pg` addon with `postgres:15-alpine` docker-compose for PostgreSQL users
+- Expanded Node template `.gitignore` (dist, logs, OS files, IDE, lock files)
 - `archgen list` command to show available languages and addons
 - `--force` flag to overwrite existing project directory
 - `--dry-run` flag to preview files without writing
