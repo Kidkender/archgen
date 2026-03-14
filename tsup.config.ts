@@ -1,7 +1,10 @@
 import { copy } from "fs-extra";
-import { dirname, join } from "path";
+import { basename, dirname, join } from "path";
 import { defineConfig } from "tsup";
 import { fileURLToPath } from "url";
+
+const SKIP_DIRS = new Set(["node_modules", ".git", "__pycache__", "venv", ".venv", "dist"]);
+const templateFilter = (src: string) => !SKIP_DIRS.has(basename(src));
 
 export default defineConfig({
   entry: ["index.ts"],
@@ -28,11 +31,13 @@ export default defineConfig({
     await copy(
       join(__dirname, "plugins/node/template"),
       join(__dirname, "dist/plugins/node/template"),
+      { filter: templateFilter },
     );
 
     await copy(
       join(__dirname, "plugins/python/template"),
       join(__dirname, "dist/plugins/python/template"),
+      { filter: templateFilter },
     );
 
     console.log("✓ Template files copied");

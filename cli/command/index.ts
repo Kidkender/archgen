@@ -9,6 +9,9 @@ export const createCommand = new Command("create")
   .option("--testing", "Include testing setup", false)
   .option("-a, --author <n>", "Author name")
   .option("-d, --description <desc>", "Project description")
+  .option("--database <db>", "Database type: mysql | postgresql (Node.js only)")
+  .option("--force", "Overwrite existing directory", false)
+  .option("--dry-run", "Preview files without creating", false)
   .description("Create a new project")
   .action(async (projectName: string, options) => {
     const finalOptions = await promptMissingOptions(projectName, options);

@@ -19,6 +19,18 @@ export async function promptMissingOptions(
     });
   }
 
+  if (!options.database && (!options.language || options.language === "node")) {
+    questions.push({
+      type: "select",
+      name: "database",
+      message: "Select a database:",
+      choices: [
+        { title: "MySQL / MariaDB", value: "mysql" },
+        { title: "PostgreSQL", value: "postgresql" },
+      ],
+    });
+  }
+
   if (!options.docker) {
     questions.push({
       type: "confirm",
@@ -45,6 +57,12 @@ export async function promptMissingOptions(
       process.exit(0);
     },
   });
+
+  const isCancelled = questions.some((q) => answers[q.name as string] === undefined);
+  if (isCancelled) {
+    console.log("\nCancelled.");
+    process.exit(0);
+  }
 
   return { ...options, ...answers };
 }

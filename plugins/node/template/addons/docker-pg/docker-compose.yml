@@ -6,7 +6,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - DATABASE_URL=mysql://root:root@db:3306/{{PROJECT_NAME}}
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/{{PROJECT_NAME}}
       - REDIS_URL=redis://redis:6379
     depends_on:
       - db
@@ -17,14 +17,15 @@ services:
     command: npm run dev
 
   db:
-    image: mariadb:11
+    image: postgres:15-alpine
     environment:
-      - MARIADB_ROOT_PASSWORD=root
-      - MARIADB_DATABASE={{PROJECT_NAME}}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB={{PROJECT_NAME}}
     ports:
-      - '3306:3306'
+      - '5432:5432'
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
@@ -32,4 +33,4 @@ services:
       - '6379:6379'
 
 volumes:
-  mariadb_data:
+  postgres_data:
