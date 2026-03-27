@@ -3,6 +3,8 @@ import { join } from "path";
 import { Command } from "commander";
 import { createCommand } from "./command";
 import { listCommand } from "./command/list";
+import { infoCommand } from "./command/info";
+import { addCommand } from "./command/add";
 
 const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
 
@@ -25,10 +27,16 @@ Examples:
   $ archgen create my-service --language python --author "John Doe"
   $ archgen create my-app --force
   $ archgen create my-app --dry-run
+  $ archgen create my-app --skip-git
   $ archgen list
+  $ archgen info node
+  $ archgen add docker
+  $ archgen add ci --dry-run
 `);
 
 program.addCommand(createCommand);
 program.addCommand(listCommand);
+program.addCommand(infoCommand);
+program.addCommand(addCommand);
 
 program.parse();

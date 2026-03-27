@@ -49,6 +49,15 @@ export async function promptMissingOptions(
     });
   }
 
+  if (!options.ci) {
+    questions.push({
+      type: "confirm",
+      name: "ci",
+      message: "Include GitHub Actions CI workflow?",
+      initial: false,
+    });
+  }
+
   if (questions.length === 0) return options;
 
   const answers = await prompts(questions, {

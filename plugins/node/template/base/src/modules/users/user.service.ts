@@ -1,4 +1,3 @@
-import prisma from "../../config/database";
 import { logger } from "../../core/logger";
 import { hashPassword } from "../../shared/utils";
 import { CreateUserInput, UpdateUserInput } from "./user.schema";

@@ -1,7 +1,7 @@
 import { FileSystem } from "../../core/file-system";
 import { logger } from "../../core/logger";
 import { TemplateEngine } from "../../core/template-engine";
-import { GenerateOptions, Plugin } from "../../types";
+import { AddAddonOptions, GenerateOptions, Plugin, StackInfo } from "../../types";
 import { pythonConfig } from "./config";
 import path from "path";
 
@@ -9,6 +9,17 @@ export class PythonPlugin implements Plugin {
   name = pythonConfig.name;
   description = pythonConfig.description;
   addons = pythonConfig.addons;
+  stack: StackInfo = {
+    runtime: "Python 3.11+",
+    framework: "FastAPI",
+    orm: "SQLAlchemy 2.0 + Alembic",
+    database: "PostgreSQL",
+    cache: "Redis 7 (redis-py)",
+    auth: "PyJWT + passlib[bcrypt]",
+    validation: "Pydantic v2",
+    testing: "pytest + pytest-asyncio + pytest-cov",
+    extras: ["APScheduler", "uvicorn", "Ruff", "Black", "mypy"],
+  };
   private templateEngine: TemplateEngine;
   private fs: FileSystem;
 
@@ -55,6 +66,15 @@ export class PythonPlugin implements Plugin {
       }
     }
 
+    if (options.ci) {
+      logger.step(dryRun ? "Previewing CI files..." : "Adding GitHub Actions CI...")
+      const ciAddon = path.join(addonsPath, "ci")
+      if (this.fs.exists(ciAddon)) {
+        const ciFiles = await this.templateEngine.processTemplate(ciAddon, outputPath, variables, dryRun)
+        files.push(...ciFiles)
+      }
+    }
+
     if (dryRun) {
       console.log("")
       logger.info(`Would create ${files.length} files in ./${projectName}:`)
@@ -66,6 +86,42 @@ export class PythonPlugin implements Plugin {
     logger.success(`Project ${projectName} generated successfully`)
 
     this.showNextSteps(projectName, options)
+  }
+
+  async applyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+    const dryRun = options.dryRun ?? false
+    const addonsPath = path.join(__dirname, "plugins/python/template", "addons")
+
+    let projectName = path.basename(projectPath)
+    try {
+      const raw = await this.fs.readFile(path.join(projectPath, "pyproject.toml"))
+      const match = raw.match(/^name\s*=\s*"([^"]+)"/m)
+      if (match) projectName = match[1]
+    } catch {
+      // fall back to dirname
+    }
+
+    const variables = {
+      PROJECT_NAME: projectName,
+      PROJECT_NAME_UNDERSCORE: projectName.replace(/-/g, "_"),
+      AUTHOR: "Your name",
+      DESCRIPTION: "",
+    }
+
+    const addonDir = path.join(addonsPath, addon)
+    if (!this.fs.exists(addonDir)) {
+      throw new Error(`Addon "${addon}" not found for Python projects`)
+    }
+
+    logger.step(dryRun ? `Previewing ${addon} files...` : `Applying ${addon}...`)
+    const files = await this.templateEngine.processTemplate(addonDir, projectPath, variables, dryRun)
+
+    if (dryRun) {
+      logger.info(`Would write ${files.length} file(s):`)
+      files.forEach((f) => console.log(`  ${f}`))
+    } else {
+      logger.success(`Addon "${addon}" applied successfully.`)
+    }
   }
 
   private showNextSteps(projectName: string, options: GenerateOptions): void {
