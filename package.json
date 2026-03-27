@@ -21,6 +21,7 @@
     "build": "tsup",
     "test": "vitest run",
     "test:integration": "pnpm build && vitest run --config vitest.integration.config.ts",
+    "test:docker": "pnpm build && vitest run --config vitest.integration.config.ts tests/integration/docker.test.ts",
     "prepublishOnly": "pnpm build"
   },
   "files": [

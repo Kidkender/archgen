@@ -1,57 +1,36 @@
-
-import fastify, { FastifyReply, FastifyRequest } from "fastify";
-import { CreateUserInput, GetUserQuery, UpdateUserInput } from "./user.schema";
-import { UserService } from "./user.service";
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { CreateUserInput, GetUserQuery, UpdateUserInput } from './user.schema';
+import { UserService } from './user.service';
 
 export class UserController {
+  constructor(private userService: UserService) {}
 
-  constructor(private userService: UserService) { }
-
-  create = async (
-    request: FastifyRequest<{ Body: CreateUserInput }>,
-    reply: FastifyReply
-  ) => {
-    await this.userService.createUser(request.body);
+  create = async (request: FastifyRequest, reply: FastifyReply) => {
+    await this.userService.createUser(request.body as CreateUserInput);
     return reply.created();
-  }
+  };
 
-
-  getById = async (
-    request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
-  ) => {
-    const id = parseInt(request.params.id);
-    const user = await this.userService.getUserById(id);
+  getById = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const user = await this.userService.getUserById(parseInt(id));
     return reply.success(user);
-  }
+  };
 
-  list = async (
-    request: FastifyRequest<{ Querystring: GetUserQuery }>,
-    reply: FastifyReply
-  ) => {
-    const { page, limit } = request.query;
+  list = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { page, limit } = request.query as GetUserQuery;
     const result = await this.userService.listUsers(page, limit);
+    return reply.paginated(result.data, result.meta);
+  };
 
-    return reply.paginated(result.data, result.meta)
-  }
-
-  update = async (
-    request: FastifyRequest<{ Params: { id: string }; Body: UpdateUserInput }>,
-    reply: FastifyReply
-  ) => {
-    const id = parseInt(request.params.id);
-    const user = await this.userService.updateUser(id, request.body);
-
+  update = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const user = await this.userService.updateUser(parseInt(id), request.body as UpdateUserInput);
     return reply.success(user);
-  }
+  };
 
-  delete = async (
-    request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
-  ) => {
-    const id = parseInt(request.params.id);
-    await this.userService.deleteUser(id);
-
+  delete = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    await this.userService.deleteUser(parseInt(id));
     return reply.noContent();
-  }
+  };
 }
