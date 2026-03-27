@@ -7,7 +7,7 @@
 ## Quick Start
 
 ```bash
-npm install -g archgen
+npm install -g @kidkender/archgen
 
 archgen create my-app
 ```
@@ -16,69 +16,88 @@ Answer a few prompts. Your project is ready in under a second.
 
 ---
 
-## Example Output
-
-```
-$ archgen create my-app
-
-✔ Select a language  › Node.js (TypeScript + Fastify)
-✔ Include Docker setup? › yes
-✔ Include testing setup? › yes
-
-⠸ Generating my-app...
-✔ Done in 0.18s
-
-┌────────────────────────────────────────────────────┐
-│  🎉 Project created successfully!                  │
-├────────────────────────────────────────────────────┤
-│  Project      my-app                               │
-│  Language     Node.js (TypeScript + Fastify)       │
-│  Docker       yes                                  │
-│  Testing      yes                                  │
-│  Time         0.18s                                │
-├────────────────────────────────────────────────────┤
-│  Next steps:                                       │
-│  $ cd my-app                                       │
-│  $ npm install                                     │
-│  $ cp .env.example .env                            │
-│  $ docker-compose up -d                            │
-└────────────────────────────────────────────────────┘
-```
-
----
-
-## The Problem
-
-Every new project starts the same way — folder structure, TypeScript config, linting, logging, auth middleware, database setup, Docker...
-
-That's **20–60 minutes of repetitive work** before you write a single line of business logic.
-
-**archgen eliminates that entirely.**
-
----
-
 ## Features
 
-- ⚡ Generates a complete backend project in under 1 second
-- 🧱 Opinionated architecture — clean, consistent, maintainable
-- 🔐 Built-in authentication, logging, error handling, and validation
-- 🌐 Multi-language support — Node.js and Python
-- 🐳 Optional Docker + docker-compose setup
-- 🧪 Optional testing setup with example test files
-- 💬 Interactive CLI prompts — no flags required
+- Generate a complete backend project in under 1 second
+- Opinionated architecture — clean, consistent, maintainable
+- Built-in authentication, logging, error handling, and validation
+- Multi-language support — Node.js and Python
+- Optional Docker + docker-compose setup
+- Optional testing setup with example test files
+- Optional GitHub Actions CI workflow
+- Interactive CLI prompts — no flags required
+- Post-scaffold addon injection with `archgen add`
 
 ---
 
 ## Supported Stacks
 
-Generated projects can be either a **Node.js** or **Python** backend — each with a fully wired architecture ready to run.
-
 | Language | Stack |
 |----------|-------|
-| Node.js  | TypeScript · Fastify · Prisma · Redis · JWT · Zod · Pino · Swagger |
-| Python   | FastAPI · SQLAlchemy 2.0 · Alembic · Redis · Pydantic v2 · APScheduler |
+| Node.js  | TypeScript · Fastify · Prisma · MariaDB/MySQL · Redis · JWT · Zod · Pino · Swagger |
+| Python   | FastAPI · SQLAlchemy 2.0 · Alembic · PostgreSQL · Redis · Pydantic v2 · APScheduler |
 
-### Generated Project Structure
+---
+
+## Usage
+
+### Interactive mode (recommended)
+
+```bash
+archgen create my-app
+```
+
+### With flags
+
+```bash
+archgen create my-api --language node --docker --testing --ci
+archgen create my-api --language node --all           # enable all addons at once
+archgen create my-service --language python --author "John Doe"
+archgen create my-app --database postgresql
+archgen create my-app --force                         # overwrite existing directory
+archgen create my-app --dry-run                       # preview files without writing
+archgen create my-app --skip-git                      # skip automatic git init
+```
+
+### Inject addons into an existing project
+
+```bash
+cd my-existing-project
+archgen add docker
+archgen add testing
+archgen add ci
+archgen add ci --dry-run    # preview changes without writing
+```
+
+### Other commands
+
+```bash
+archgen list                # list available languages and addons
+archgen info node           # show full stack details for a language
+archgen doctor              # check that required tools are installed
+```
+
+---
+
+## Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-l, --language` | `node` or `python` | prompt |
+| `--database` | `mysql` or `postgresql` (Node.js only) | prompt |
+| `--docker` | Include Dockerfile + docker-compose | `false` |
+| `--testing` | Include testing setup | `false` |
+| `--ci` | Include GitHub Actions CI workflow | `false` |
+| `--all` | Enable docker + testing + ci at once | `false` |
+| `-a, --author` | Author name | `Your Name` |
+| `-d, --description` | Project description | — |
+| `--force` | Overwrite existing directory | `false` |
+| `--dry-run` | Preview files without writing | `false` |
+| `--skip-git` | Skip automatic git init | `false` |
+
+---
+
+## Generated Project Structure
 
 **Node.js**
 ```
@@ -92,6 +111,7 @@ my-app/
 ├── prisma/
 ├── tests/
 ├── .env.example
+├── .editorconfig
 └── package.json
 ```
 
@@ -107,45 +127,17 @@ my-api/
 ├── migrations/
 ├── tests/
 ├── .env.example
+├── .editorconfig
 └── pyproject.toml
 ```
-
----
-
-## Usage
-
-```bash
-# Interactive mode — recommended
-archgen create my-app
-
-# With flags
-archgen create my-app --language node --docker --testing
-archgen create my-api --language python --docker
-```
-
-### Options
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-l, --language` | `node` or `python` | prompt |
-| `--docker` | Include Dockerfile + docker-compose | `false` |
-| `--testing` | Include testing setup | `false` |
-| `-a, --author` | Author name | `Your Name` |
-| `-d, --description` | Project description | — |
-
----
-
-## Philosophy
-
-archgen is intentionally **opinionated**.
-
-Instead of offering dozens of configuration options, it provides a carefully designed architecture that works well for most backend services out of the box. No plugin system, no template marketplace — just a well-structured project that's ready to ship.
 
 ---
 
 ## Requirements
 
 - Node.js >= 18
+- git (optional — for auto `git init`)
+- Docker (optional — for `--docker` addon)
 
 ---
 
