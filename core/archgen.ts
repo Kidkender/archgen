@@ -1,6 +1,6 @@
 import path from "path";
 import { execSync } from "child_process";
-import { GenerateOptions } from "../types";
+import { AddAddonOptions, GenerateOptions } from "../types";
 import { FileSystem } from "./file-system";
 import { logger } from "./logger";
 import { registry } from "./registry";
@@ -59,11 +59,13 @@ export class ArchGen {
 
       await plugin.generate(projectName, options);
 
-      try {
-        logger.step("Initializing git repository...");
-        execSync("git init", { cwd: targetPath, stdio: "ignore" });
-      } catch {
-        logger.warn("git init skipped (git not found)");
+      if (!options.skipGit) {
+        try {
+          logger.step("Initializing git repository...");
+          execSync("git init", { cwd: targetPath, stdio: "ignore" });
+        } catch {
+          logger.warn("git init skipped (git not found)");
+        }
       }
 
       const elapsed = ((performance.now() - start) / 1000).toFixed(2);
@@ -83,4 +85,23 @@ export class ArchGen {
     }
   }
 
+  async addAddon(projectPath: string, language: string, addon: string, options: AddAddonOptions): Promise<void> {
+    const plugin = registry.get(language);
+    if (!plugin) {
+      logger.error(`No plugin found for language: ${language}`);
+      process.exit(1);
+    }
+
+    if (!plugin.applyAddon) {
+      logger.error(`Plugin "${language}" does not support adding addons.`);
+      process.exit(1);
+    }
+
+    try {
+      await plugin.applyAddon(projectPath, addon, options);
+    } catch (error) {
+      logger.error(`Failed to apply addon: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  }
 }

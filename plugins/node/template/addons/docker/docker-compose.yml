@@ -8,6 +8,8 @@ services:
     environment:
       - DATABASE_URL=mysql://root:root@db:3306/{{PROJECT_NAME}}
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - NODE_ENV=development
     depends_on:
       - db
       - redis
@@ -15,6 +17,7 @@ services:
       - .:/app
       - /app/node_modules
     command: npm run dev
+    restart: on-failure
 
   db:
     image: mariadb:11

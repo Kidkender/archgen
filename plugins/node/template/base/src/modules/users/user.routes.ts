@@ -1,14 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { UserController } from './user.controller';
 import { authenticate } from '../../middleware/auth.middleware';
-import {
-  createUserSchema,
-  updateUserSchema,
-  getUserQuerySchema,
-} from './user.schema';
-import z from 'zod';
+import { createUserSchema, updateUserSchema } from './user.schema';
 import { UserService } from './user.service';
-
 
 export default async function userRoutes(app: FastifyInstance) {
   const service = new UserService(app.prisma);
@@ -22,33 +16,25 @@ export default async function userRoutes(app: FastifyInstance) {
         tags: ['Users'],
       },
     },
-    controller.create
+    controller.create,
   );
 
   app.get(
     '/:id',
     {
       preHandler: authenticate,
-      schema: {
-        params: z.object({
-          id: z.string()
-        }),
-        tags: ['Users'],
-      },
+      schema: { tags: ['Users'] },
     },
-    controller.getById
+    controller.getById,
   );
 
   app.get(
     '/',
     {
       preHandler: authenticate,
-      schema: {
-        querystring: getUserQuerySchema,
-        tags: ['Users'],
-      },
+      schema: { tags: ['Users'] },
     },
-    controller.list
+    controller.list,
   );
 
   app.patch(
@@ -56,27 +42,19 @@ export default async function userRoutes(app: FastifyInstance) {
     {
       preHandler: authenticate,
       schema: {
-        params: z.object({
-          id: z.string()
-        }),
         body: updateUserSchema,
         tags: ['Users'],
       },
     },
-    controller.update
+    controller.update,
   );
 
   app.delete(
     '/:id',
     {
       preHandler: authenticate,
-      schema: {
-        params: z.object({
-          id: z.string()
-        }),
-        tags: ['Users'],
-      },
+      schema: { tags: ['Users'] },
     },
-    controller.delete
+    controller.delete,
   );
 }

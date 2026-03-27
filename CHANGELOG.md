@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.3] - 2026-03-27
+
+### Added
+- **`archgen add <addon>`** — inject addons (docker/testing/ci) into an existing project without regenerating
+- **`archgen info <language>`** — display full stack details (runtime, framework, ORM, cache, auth, validation, testing)
+- **`archgen doctor`** — check that required tools (Node, npm, git, Docker, Python) are installed
+- **`--ci` flag** — include GitHub Actions CI workflow at creation time
+- **`--skip-git` flag** — skip automatic `git init` after project generation
+- **`--all` flag** — shorthand for `--docker --testing --ci`
+- **`--database` validation** — error immediately on invalid value instead of silent fallback
+- **CI addon** for Node.js: `.github/workflows/ci.yml` with MariaDB + Redis services, Node 18.x/20.x matrix
+- **CI addon** for Python: `.github/workflows/ci.yml` with PostgreSQL + Redis services, Python 3.11/3.12 matrix
+- **ESLint v9 flat config** (`eslint.config.mjs`) replaces deprecated `.eslintrc.json` in Node template
+- **`.editorconfig`** added to both Node.js and Python generated templates
+- **`postinstall: prisma generate`** in Node template — Prisma client generated automatically after `npm install`
+- Expanded test suite: 42+ unit tests, integration tests, Docker integration test
+- `pnpm test:integration` and `pnpm test:docker` scripts for separate test runs
+
+### Fixed
+- Docker template: `JWT_SECRET` missing from `docker-compose.yml` environment (caused immediate crash on `docker-compose up`)
+- Docker template: no `restart: on-failure` on app service (permanent crash if MariaDB not ready)
+- Docker template: `npm ci` → `npm install` in Dockerfile (new projects have no `package-lock.json`)
+- Database prompt now correctly hidden when user selects Python (was always shown regardless of language)
+- `console.log` in `cli/prompts.ts` replaced with `logger` (convention consistency)
+
 ## [1.0.2] - 2026-03-13
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
   "name": "@kidkender/archgen",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Generate production-ready Node.js and Python project structures in seconds",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -20,6 +20,8 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "test": "vitest run",
+    "test:integration": "pnpm build && vitest run --config vitest.integration.config.ts",
+    "test:docker": "pnpm build && vitest run --config vitest.integration.config.ts tests/integration/docker.test.ts",
     "prepublishOnly": "pnpm build"
   },
   "files": [
