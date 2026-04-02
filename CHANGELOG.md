@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.4] - 2026-04-01
+
+### Added
+- **`BasePlugin` abstract class** (`core/base-plugin.ts`) — shared `generate()` and `applyAddon()` logic extracted from Node/Python plugins; plugins now only define variables, template paths, and addon entries
+- **`ArchGenError` class** (`core/errors.ts`) — typed errors with `.code` field; `ArchGen.create()` and `ArchGen.addAddon()` now throw instead of calling `process.exit()`
+- **`--output <dir>` flag** — create projects outside the current directory: `archgen create my-app --output /tmp/projects`
+- **`--quiet` flag** — suppress all output except errors
+- **`--verbose` flag** — show debug-level output
+- **Colored dry-run output** for `archgen add --dry-run` — green `[new]` / yellow `[overwrite]` per file
+- **`archgen completion [bash|zsh|fish]`** — print shell completion script: `source <(archgen completion bash)`
+- **Husky + lint-staged addon** (`--husky`) for Node.js — generates `.husky/pre-commit` and `lint-staged.config.mjs`
+- **Python SQLite support** (`--database sqlite`) — overlay with `aiosqlite` driver, SQLite-configured `database.py`, `config.py`, `.env.example`, `pyproject.toml`
+- **`.archgen-meta.json`** written to generated project root with `{ version, language, addons, database, generatedAt, projectName }`
+- **Plugin unit tests** — `tests/unit/node-plugin.test.ts` and `tests/unit/python-plugin.test.ts` (26 tests total)
+- **E2E snapshot tests** — `tests/integration/snapshot.test.ts` captures template call paths for regression detection
+- Logger now supports `setLevel("quiet" | "normal" | "verbose")` — `debug()` gated behind verbose mode
+
+### Changed
+- `process.exit()` removed from `core/archgen.ts` — CLI layer now handles exit codes; `ArchGen` is safe to use as a library
+- `NodePlugin` and `PythonPlugin` now extend `BasePlugin` with no duplicated logic
+- Database prompt in interactive mode now supports both Node.js (mysql/postgresql) and Python (postgresql/sqlite)
+- `--database` validation is now language-aware in `cli/command/index.ts`
+- `archgen add` argument hint updated to include `husky`
+- Python `StackInfo.database` updated to reflect SQLite support
+
+### Fixed
+- `archgen add --dry-run` now shows whether each file is new or would overwrite an existing file
+
 ## [1.0.3] - 2026-03-27
 
 ### Added

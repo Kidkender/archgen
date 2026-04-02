@@ -1,22 +1,30 @@
 import chalk from "chalk";
 
+type LogLevel = "quiet" | "normal" | "verbose";
+
+let level: LogLevel = "normal";
+
 export const logger = {
+  setLevel(newLevel: LogLevel): void {
+    level = newLevel;
+  },
+
   info: (msg: string) => {
-    console.log(chalk.blue("i"), msg);
+    if (level !== "quiet") console.log(chalk.blue("i"), msg);
   },
   success: (msg: string) => {
-    console.log(chalk.green("✓"), msg);
+    if (level !== "quiet") console.log(chalk.green("✓"), msg);
   },
   error: (msg: string) => {
     console.log(chalk.red("x"), msg);
   },
   warn: (msg: string) => {
-    console.log(chalk.yellow("!"), msg);
+    if (level !== "quiet") console.log(chalk.yellow("!"), msg);
   },
   debug: (msg: string) => {
-    console.log(chalk.gray("d"), msg);
+    if (level === "verbose") console.log(chalk.gray("d"), msg);
   },
   step: (msg: string) => {
-    console.log(chalk.cyan("→"), msg);
+    if (level !== "quiet") console.log(chalk.cyan("→"), msg);
   },
 };

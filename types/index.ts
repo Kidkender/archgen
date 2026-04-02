@@ -3,12 +3,16 @@ export interface GenerateOptions {
   docker?: boolean;
   testing?: boolean;
   ci?: boolean;
+  husky?: boolean;
   author?: string;
   description?: string;
   force?: boolean;
   dryRun?: boolean;
   database?: string;
   skipGit?: boolean;
+  output?: string;
+  /** Resolved absolute output path — set internally by ArchGen before calling plugin.generate() */
+  outputDir?: string;
 }
 
 export interface StackInfo {

@@ -35,6 +35,7 @@ vi.mock("../../core/registry", () => ({
 }));
 
 import { ArchGen } from "../../core/archgen";
+import { ArchGenError } from "../../core/errors";
 import { registry } from "../../core/registry";
 
 describe("ArchGen.create", () => {
@@ -49,35 +50,31 @@ describe("ArchGen.create", () => {
   });
 
   it("rejects path traversal attempts", async () => {
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
-    await expect(archgen.create("../evil", { language: "node" })).rejects.toThrow("exit");
-    exitSpy.mockRestore();
+    await expect(archgen.create("../evil", { language: "node" })).rejects.toThrow(ArchGenError);
+    await expect(archgen.create("../evil", { language: "node" })).rejects.toMatchObject({ code: "INVALID_PATH" });
   });
 
   it("rejects invalid project name", async () => {
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
-    await expect(archgen.create("MyApp", { language: "node" })).rejects.toThrow("exit");
-    exitSpy.mockRestore();
+    await expect(archgen.create("MyApp", { language: "node" })).rejects.toThrow(ArchGenError);
+    await expect(archgen.create("MyApp", { language: "node" })).rejects.toMatchObject({ code: "NAME_ERROR" });
   });
 
   it("rejects existing directory without --force", async () => {
     mockFs.exists.mockReturnValue(true);
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
-    await expect(archgen.create("my-app", { language: "node" })).rejects.toThrow("exit");
-    exitSpy.mockRestore();
+    await expect(archgen.create("my-app", { language: "node" })).rejects.toThrow(ArchGenError);
+    await expect(archgen.create("my-app", { language: "node" })).rejects.toMatchObject({ code: "DIR_EXISTS" });
   });
 
   it("removes existing directory when --force is set", async () => {
-    mockFs.exists.mockReturnValue(true);
+    mockFs.exists.mockReturnValueOnce(true).mockReturnValue(false);
     await archgen.create("my-app", { language: "node", force: true });
     expect(mockFs.removeDir).toHaveBeenCalledOnce();
   });
 
   it("rejects unsupported language", async () => {
     vi.mocked(registry.get).mockReturnValue(undefined);
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
-    await expect(archgen.create("my-app", { language: "ruby" })).rejects.toThrow("exit");
-    exitSpy.mockRestore();
+    await expect(archgen.create("my-app", { language: "ruby" })).rejects.toThrow(ArchGenError);
+    await expect(archgen.create("my-app", { language: "ruby" })).rejects.toMatchObject({ code: "UNSUPPORTED_LANGUAGE" });
   });
 
   it("calls plugin.generate on successful create", async () => {
@@ -103,10 +100,23 @@ describe("ArchGen.create", () => {
 
   it("rolls back partial project on plugin error", async () => {
     mockGenerate.mockRejectedValueOnce(new Error("template error"));
-    mockFs.exists.mockReturnValue(true);
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("exit"); });
-    await expect(archgen.create("my-app", { language: "node" })).rejects.toThrow("exit");
+    mockFs.exists.mockReturnValueOnce(false).mockReturnValue(true);
+    await expect(archgen.create("my-app", { language: "node" })).rejects.toMatchObject({ code: "GENERATE_FAILED" });
     expect(mockFs.removeDir).toHaveBeenCalled();
-    exitSpy.mockRestore();
+  });
+
+  it("sets outputDir in resolved options passed to plugin", async () => {
+    await archgen.create("my-app", { language: "node" });
+    expect(mockGenerate).toHaveBeenCalledWith(
+      "my-app",
+      expect.objectContaining({ outputDir: expect.stringContaining("my-app") }),
+    );
+  });
+
+  it("rejects --output dir that does not exist", async () => {
+    mockFs.exists.mockReturnValue(false);
+    await expect(
+      archgen.create("my-app", { language: "node", output: "/nonexistent/path" }),
+    ).rejects.toMatchObject({ code: "OUTPUT_DIR_NOT_FOUND" });
   });
 });

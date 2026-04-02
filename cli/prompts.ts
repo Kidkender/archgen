@@ -6,6 +6,18 @@ export async function promptMissingOptions(
   _projectName: string,
   options: GenerateOptions,
 ): Promise<GenerateOptions> {
+  // Non-interactive mode: skip prompts, apply defaults for unset options
+  if (!process.stdin.isTTY) {
+    return {
+      docker: false,
+      testing: false,
+      ci: false,
+      husky: false,
+      ...options,
+      language: options.language ?? "node",
+    };
+  }
+
   const questions: prompts.PromptObject[] = [];
 
   if (!options.language) {
@@ -20,20 +32,28 @@ export async function promptMissingOptions(
     });
   }
 
-  // Database is Node.js-only — skip if language is already python, or if prompted language ends up python
   if (!options.database) {
     const fixedLang = options.language;
     questions.push({
       type: (_prev, values) => {
         const lang = fixedLang ?? (values as GenerateOptions).language;
-        return lang === "node" ? "select" : null;
+        return lang === "node" || lang === "python" ? "select" : null;
       },
       name: "database",
       message: "Select a database:",
-      choices: [
-        { title: "MySQL / MariaDB", value: "mysql" },
-        { title: "PostgreSQL", value: "postgresql" },
-      ],
+      choices: (_prev, values) => {
+        const lang = fixedLang ?? (values as GenerateOptions).language;
+        if (lang === "python") {
+          return [
+            { title: "PostgreSQL (default)", value: "postgresql" },
+            { title: "SQLite (no server needed)", value: "sqlite" },
+          ];
+        }
+        return [
+          { title: "MySQL / MariaDB", value: "mysql" },
+          { title: "PostgreSQL", value: "postgresql" },
+        ];
+      },
     });
   }
 
@@ -60,6 +80,19 @@ export async function promptMissingOptions(
       type: "confirm",
       name: "ci",
       message: "Include GitHub Actions CI workflow?",
+      initial: false,
+    });
+  }
+
+  if (options.husky === undefined && options.language !== "python") {
+    const fixedLang = options.language;
+    questions.push({
+      type: (_prev, values) => {
+        const lang = fixedLang ?? (values as GenerateOptions).language;
+        return lang === "node" ? "confirm" : null;
+      },
+      name: "husky",
+      message: "Include Husky + lint-staged setup?",
       initial: false,
     });
   }
