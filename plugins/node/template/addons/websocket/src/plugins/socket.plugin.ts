@@ -17,6 +17,8 @@ declare module "fastify" {
 
 const socketPlugin: FastifyPluginAsync = fp(async (fastify) => {
   const io = new SocketServer(fastify.server, {
+    // Use websocket transport only to avoid Fastify router conflict with HTTP polling
+    transports: ["websocket"],
     cors: {
       origin: env.CORS_ORIGIN,
       methods: ["GET", "POST"],
