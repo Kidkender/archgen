@@ -25,6 +25,10 @@ Answer a few prompts. Your project is ready in under a second.
 - Optional Docker + docker-compose setup
 - Optional testing setup with example test files
 - Optional GitHub Actions CI workflow
+- Optional WebSocket support with Socket.io + JWT auth
+- Optional OAuth2 (Google + GitHub) via `@fastify/oauth2`
+- Optional API documentation via Scalar + Swagger UI
+- Auto update notifier — hints when a new version is available
 - Interactive CLI prompts — no flags required
 - Post-scaffold addon injection with `archgen add`
 
@@ -66,6 +70,9 @@ cd my-existing-project
 archgen add docker
 archgen add testing
 archgen add ci
+archgen add websocket       # Socket.io + JWT auth + notification helpers
+archgen add oauth           # Google + GitHub OAuth2 routes
+archgen add api-docs        # Scalar UI at /reference + Swagger UI at /docs
 archgen add ci --dry-run    # preview changes without writing
 ```
 
@@ -89,6 +96,9 @@ archgen doctor              # check that required tools are installed
 | `--testing` | Include testing setup | `false` |
 | `--ci` | Include GitHub Actions CI workflow | `false` |
 | `--all` | Enable docker + testing + ci at once | `false` |
+| `--websocket` | Include Socket.io WebSocket support | `false` |
+| `--oauth` | Include Google + GitHub OAuth2 | `false` |
+| `--api-docs` | Include Scalar + Swagger API docs | `false` |
 | `-a, --author` | Author name | `Your Name` |
 | `-d, --description` | Project description | — |
 | `--force` | Overwrite existing directory | `false` |

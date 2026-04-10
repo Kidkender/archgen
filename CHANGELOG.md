@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.6] - 2026-04-10
+
+### Fixed
+- **WebSocket addon**: Socket.io now uses `transports: ['websocket']` to avoid conflict with Fastify's HTTP router (polling transport was returning 404)
+- **OAuth2 addon**: Updated `generateAuthorizationUri` calls to `@fastify/oauth2` v8 API — now requires `(request, reply)` instead of `({ state })`
+- **OAuth2 addon**: Added `@fastify/cookie` as required dependency for `@fastify/oauth2` v8 state cookie management
+- **OAuth2 addon**: Added `src/app.ts` overlay — cookie, googleOAuth2, githubOAuth2, and oauthRoutes are now auto-registered; no manual integration needed
+- **`archgen add`**: Overrode `applyAddon()` in `NodePlugin` to merge addon-specific dependencies into `package.json` (previously only `generate()` did this)
+
 ## [1.0.5] - 2026-04-10
 
 ### Added
