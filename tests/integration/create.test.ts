@@ -113,6 +113,63 @@ describe("CLI: archgen create Python full generate", () => {
   });
 });
 
+describe("CLI: archgen create Node -- websocket addon", () => {
+  it("dry-run previews socket and notification files", async () => {
+    await fs.ensureDir(tmpDir);
+    const out = run(
+      "create my-app --language node --database mysql --websocket --skip-git --dry-run"
+    );
+    expect(out).toContain("socket.plugin.ts");
+    expect(out).toContain("notification.events.ts");
+  });
+
+  it("creates socket plugin and notification module files", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --websocket --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    expect(fs.existsSync(path.join(projectDir, "src", "plugins", "socket.plugin.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "notification", "notification.events.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "notification", "notification.service.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "notification", "index.ts"))).toBe(true);
+    const pkg = fs.readJsonSync(path.join(projectDir, "package.json")) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies["socket.io"]).toBeDefined();
+  });
+});
+
+describe("CLI: archgen create Node -- oauth addon", () => {
+  it("creates oauth module and config files", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --oauth --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "oauth", "oauth.routes.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "oauth", "oauth.service.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "oauth", "oauth.schema.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "config", "oauth.ts"))).toBe(true);
+    const pkg = fs.readJsonSync(path.join(projectDir, "package.json")) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies["@fastify/oauth2"]).toBeDefined();
+  });
+
+  it(".env.example includes OAuth keys", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --oauth --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    const env = fs.readFileSync(path.join(projectDir, ".env.example"), "utf-8");
+    expect(env).toContain("GOOGLE_CLIENT_ID");
+    expect(env).toContain("GITHUB_CLIENT_ID");
+  });
+});
+
+describe("CLI: archgen create Node -- api-docs addon", () => {
+  it("creates docs plugin file", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --api-docs --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    expect(fs.existsSync(path.join(projectDir, "src", "plugins", "docs.plugin.ts"))).toBe(true);
+    const pkg = fs.readJsonSync(path.join(projectDir, "package.json")) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies["@scalar/fastify-api-reference"]).toBeDefined();
+  });
+});
+
 describe("CLI: archgen add", () => {
   it("adds ci addon to existing node project", async () => {
     await fs.ensureDir(tmpDir);
@@ -138,5 +195,33 @@ describe("CLI: archgen add", () => {
     run("create my-app --language node --database mysql --docker --testing --skip-git");
     const projectDir = path.join(tmpDir, "my-app");
     expect(() => run("add xyz", projectDir)).toThrow();
+  });
+
+  it("adds websocket addon to existing project", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    expect(fs.existsSync(path.join(projectDir, "src", "plugins", "socket.plugin.ts"))).toBe(false);
+    run("add websocket", projectDir);
+    expect(fs.existsSync(path.join(projectDir, "src", "plugins", "socket.plugin.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "notification", "notification.events.ts"))).toBe(true);
+  });
+
+  it("adds oauth addon to existing project", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "oauth"))).toBe(false);
+    run("add oauth", projectDir);
+    expect(fs.existsSync(path.join(projectDir, "src", "modules", "oauth", "oauth.routes.ts"))).toBe(true);
+  });
+
+  it("adds api-docs addon to existing project", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database mysql --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    expect(fs.existsSync(path.join(projectDir, "src", "plugins", "docs.plugin.ts"))).toBe(false);
+    run("add api-docs", projectDir);
+    expect(fs.existsSync(path.join(projectDir, "src", "plugins", "docs.plugin.ts"))).toBe(true);
   });
 });

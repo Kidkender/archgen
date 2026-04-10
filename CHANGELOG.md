@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.5] - 2026-04-10
+
+### Added
+- **WebSocket addon** (`--websocket`) — injects Socket.io into Node.js projects: `src/plugins/socket.plugin.ts` with JWT auth middleware, personal rooms per user; `src/modules/notification/` with `sendToUser()`, `broadcast()`, `sendToRoom()` helpers
+- **OAuth2 addon** (`--oauth`) — injects `@fastify/oauth2` with Google + GitHub providers: `src/modules/oauth/` (routes, service, schema), `src/config/oauth.ts` (Zod-validated env), `.env.example` overlay with `GOOGLE_CLIENT_ID`, `GITHUB_CLIENT_ID`, `APP_URL`
+- **API Docs addon** (`--api-docs`) — injects `@scalar/fastify-api-reference` Scalar UI at `/reference` and Swagger UI at `/docs`: `src/plugins/docs.plugin.ts`
+- **Update notifier** — passive check on every command; shows upgrade hint if a newer version exists on npm (24h cache, 3s timeout, silent on error)
+
+### Changed
+- `NodePlugin.generate()` now merges addon dependencies programmatically into `package.json` after template overlay — prevents last addon from overwriting earlier addon deps
+
 ## [1.0.4] - 2026-04-01
 
 ### Added

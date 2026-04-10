@@ -3,6 +3,7 @@ import { BasePlugin, AddonEntry } from "../../core/base-plugin";
 import { TemplateVariables } from "../../core/template-engine";
 import { GenerateOptions, StackInfo } from "../../types";
 import { nodeConfig } from "./config";
+import fs from "fs-extra";
 
 export class NodePlugin extends BasePlugin {
   readonly name = nodeConfig.name;
@@ -60,7 +61,43 @@ export class NodePlugin extends BasePlugin {
         path: path.join(addonsPath, "husky"),
         label: "Husky + lint-staged",
       },
+      {
+        condition: !!options.websocket,
+        path: path.join(addonsPath, "websocket"),
+        label: "WebSocket (Socket.io)",
+      },
+      {
+        condition: !!options.oauth,
+        path: path.join(addonsPath, "oauth"),
+        label: "OAuth2 (Google + GitHub)",
+      },
+      {
+        condition: !!options.apiDocs,
+        path: path.join(addonsPath, "api-docs"),
+        label: "API docs (Scalar)",
+      },
     ];
+  }
+
+  async generate(projectName: string, options: GenerateOptions): Promise<void> {
+    await super.generate(projectName, options);
+
+    // Merge addon-specific deps into package.json after all overlays are applied
+    if (options.dryRun) return;
+
+    const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
+    const pkgPath = path.join(outputPath, "package.json");
+
+    const extraDeps: Record<string, string> = {};
+    if (options.websocket) extraDeps["socket.io"] = "^4.8.1";
+    if (options.oauth) extraDeps["@fastify/oauth2"] = "^8.1.0";
+    if (options.apiDocs) extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
+
+    if (Object.keys(extraDeps).length === 0) return;
+
+    const pkg = await fs.readJson(pkgPath) as { dependencies: Record<string, string> };
+    pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
+    await fs.writeJson(pkgPath, pkg, { spaces: 2 });
   }
 
   protected async readProjectName(projectPath: string): Promise<string> {
@@ -102,6 +139,24 @@ export class NodePlugin extends BasePlugin {
       console.log(`  docker-compose up -d`);
     } else {
       console.log(`  npm run dev`);
+    }
+    if (options.websocket) {
+      console.log("");
+      console.log("  WebSocket — add to src/app.ts:");
+      console.log(`  import socketPlugin from './plugins/socket.plugin';`);
+      console.log(`  await app.register(socketPlugin);`);
+    }
+    if (options.oauth) {
+      console.log("");
+      console.log("  OAuth — add to src/app.ts:");
+      console.log(`  import oauth2 from '@fastify/oauth2';`);
+      console.log(`  import oauthRoutes from './modules/oauth/oauth.routes';`);
+      console.log(`  // register Google + GitHub oauth2, then:`);
+      console.log(`  await app.register(oauthRoutes, { prefix: '/api/v1/oauth' });`);
+      console.log(`  // See src/modules/oauth/oauth.routes.ts for full setup`);
+    }
+    if (options.apiDocs) {
+      console.log("  Scalar API reference available at: http://localhost:3000/reference");
     }
     console.log("");
   }

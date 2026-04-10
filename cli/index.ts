@@ -8,8 +8,13 @@ import { addCommand } from "./command/add";
 import { doctorCommand } from "./command/doctor";
 import { completionCommand } from "./command/completion";
 import { logger } from "../core/logger";
+import { checkForUpdate } from "../core/update-notifier";
+import chalk from "chalk";
 
 const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
+
+// Fire update check immediately — non-blocking, result awaited in postAction
+const updateCheckPromise = checkForUpdate(pkg.version as string);
 
 const program = new Command();
 
@@ -57,6 +62,23 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
   // Pass global flags down to subcommand options
   if (opts.quiet) actionCommand.setOptionValue("quiet", true);
   if (opts.verbose) actionCommand.setOptionValue("verbose", true);
+});
+
+program.hook("postAction", async () => {
+  const latestVersion = await updateCheckPromise;
+  if (!latestVersion) return;
+  const opts = program.opts<{ quiet?: boolean }>();
+  if (opts.quiet) return;
+
+  console.log();
+  console.log(
+    chalk.yellow("  Update available:"),
+    chalk.gray(pkg.version as string),
+    "→",
+    chalk.green(latestVersion)
+  );
+  console.log(chalk.gray("  Run: npm install -g @kidkender/archgen"));
+  console.log();
 });
 
 program.addCommand(createCommand);

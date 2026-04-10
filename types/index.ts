@@ -4,6 +4,9 @@ export interface GenerateOptions {
   testing?: boolean;
   ci?: boolean;
   husky?: boolean;
+  websocket?: boolean;
+  oauth?: boolean;
+  apiDocs?: boolean;
   author?: string;
   description?: string;
   force?: boolean;

@@ -1,6 +1,6 @@
 {
   "name": "@kidkender/archgen",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Generate production-ready Node.js and Python project structures in seconds",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:integration": "pnpm build && vitest run --config vitest.integration.config.ts",
     "test:docker": "pnpm build && vitest run --config vitest.integration.config.ts tests/integration/docker.test.ts",
+    "test:e2e": "pnpm build && vitest run --config vitest.integration.config.ts tests/integration/e2e-addons.test.ts",
     "prepublishOnly": "pnpm build"
   },
   "files": [
