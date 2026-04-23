@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.7] - 2026-04-23
+
+### Added
+- **Claude Code addon** (`--claude-code`) — injects `CLAUDE.md` (project context with stack, commands, architecture) and `.claude/skills/` with pre-configured skills into generated projects: `backend-patterns`, `api-design`, `database-migrations`, `docker-patterns`, `security-review`, `tdd-workflow`, `deployment-patterns` (Node.js); `python-patterns`, `python-testing`, `backend-patterns`, `postgres-patterns`, `database-migrations`, `docker-patterns`, `security-review` (Python)
+- **Cursor addon** (`--cursor`) — injects `.cursor/skills/` with the same skill set (same content, `skill.md` format) for Cursor Agent
+- **AI agent multi-select prompt** — when neither `--claude-code` nor `--cursor` is passed, interactive mode shows a multiselect: `Claude Code` and `Cursor` can be selected independently or together
+- Both addons work with `archgen add claude-code` and `archgen add cursor` on existing projects
+
+### Fixed
+- Integration snapshot tests: `mockFs.exists` now returns `true` for template/addon paths so addon conditions are correctly evaluated in test environment
+
 ## [1.0.6] - 2026-04-10
 
 ### Fixed

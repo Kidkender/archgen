@@ -14,6 +14,8 @@ export interface GenerateOptions {
   database?: string;
   skipGit?: boolean;
   output?: string;
+  claudeCode?: boolean;
+  cursor?: boolean;
   /** Resolved absolute output path — set internally by ArchGen before calling plugin.generate() */
   outputDir?: string;
 }

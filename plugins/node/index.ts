@@ -77,6 +77,16 @@ export class NodePlugin extends BasePlugin {
         path: path.join(addonsPath, "api-docs"),
         label: "API docs (Scalar)",
       },
+      {
+        condition: !!options.claudeCode,
+        path: path.join(addonsPath, "claude-code"),
+        label: "Claude Code setup",
+      },
+      {
+        condition: !!options.cursor,
+        path: path.join(addonsPath, "cursor"),
+        label: "Cursor agent setup",
+      },
     ];
   }
 
@@ -180,6 +190,15 @@ export class NodePlugin extends BasePlugin {
     }
     if (options.apiDocs) {
       console.log("  Scalar API reference available at: http://localhost:3000/reference");
+    }
+    if (options.claudeCode) {
+      console.log("");
+      console.log("  Claude Code — open this project in Claude Code to use pre-configured skills");
+      console.log("  Skills: /backend-patterns /api-design /tdd-workflow and more");
+    }
+    if (options.cursor) {
+      console.log("");
+      console.log("  Cursor — .cursor/skills/ ready, open project in Cursor to use agent skills");
     }
     console.log("");
   }

@@ -13,6 +13,8 @@ export async function promptMissingOptions(
       testing: false,
       ci: false,
       husky: false,
+      claudeCode: false,
+      cursor: false,
       ...options,
       language: options.language ?? "node",
     };
@@ -97,6 +99,19 @@ export async function promptMissingOptions(
     });
   }
 
+  if (options.claudeCode === undefined && options.cursor === undefined) {
+    questions.push({
+      type: "multiselect",
+      name: "aiAgents",
+      message: "Include AI agent setup? (Space to select, Enter to confirm)",
+      choices: [
+        { title: "Claude Code  (CLAUDE.md + .claude/skills/)", value: "claude", selected: false },
+        { title: "Cursor       (.cursor/skills/)", value: "cursor", selected: false },
+      ],
+      hint: "none to skip",
+    });
+  }
+
   if (questions.length === 0) return options;
 
   const answers = await prompts(questions, {
@@ -115,5 +130,11 @@ export async function promptMissingOptions(
     process.exit(0);
   }
 
-  return { ...options, ...answers };
+  const raw = { ...options, ...answers } as Record<string, unknown>;
+  if (Array.isArray(raw.aiAgents)) {
+    raw.claudeCode = (raw.aiAgents as string[]).includes("claude");
+    raw.cursor = (raw.aiAgents as string[]).includes("cursor");
+    delete raw.aiAgents;
+  }
+  return raw as unknown as GenerateOptions;
 }
