@@ -8,3 +8,9 @@
 
 /dist/
 .env
+# Added by code-review-graph
+.code-review-graph/
+
+# Override global ignore for template addon files
+!plugins/*/template/addons/claude-code/.claude/
+!plugins/*/template/addons/claude-code/.claude/**

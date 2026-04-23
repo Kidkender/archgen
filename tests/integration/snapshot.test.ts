@@ -43,7 +43,11 @@ describe("ArchGen snapshot — Node.js", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProcessTemplate.mockResolvedValue([]);
-    mockFs.exists.mockReturnValue(false);
+    // Return true for template/addon paths so addons are applied,
+    // false for project output paths so DIR_EXISTS is not triggered
+    mockFs.exists.mockImplementation((p: string) =>
+      typeof p === "string" && (p.includes("template") || p.includes("plugins")),
+    );
     archgen = new ArchGen();
   });
 
@@ -99,7 +103,9 @@ describe("ArchGen snapshot — Python", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProcessTemplate.mockResolvedValue([]);
-    mockFs.exists.mockReturnValue(false);
+    mockFs.exists.mockImplementation((p: string) =>
+      typeof p === "string" && (p.includes("template") || p.includes("plugins")),
+    );
     archgen = new ArchGen();
   });
 

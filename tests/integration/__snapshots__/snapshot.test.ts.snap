@@ -1,0 +1,36 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ArchGen snapshot — Node.js > base project calls processTemplate with expected paths 1`] = `
+[
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\base",
+]
+`;
+
+exports[`ArchGen snapshot — Node.js > with --all applies docker, testing and ci addons 1`] = `
+[
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\base",
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\addons\\docker",
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\addons\\testing",
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\addons\\ci",
+]
+`;
+
+exports[`ArchGen snapshot — Node.js > with --docker applies docker addon 1`] = `
+[
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\base",
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\node\\template\\addons\\docker",
+]
+`;
+
+exports[`ArchGen snapshot — Python > base project calls processTemplate with expected paths 1`] = `
+[
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\python\\template\\base",
+]
+`;
+
+exports[`ArchGen snapshot — Python > with --database sqlite applies sqlite addon 1`] = `
+[
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\python\\template\\base",
+  "C:\\Users\\Admin\\Desktop\\DuckCode\\Node\\archgen\\core\\plugins\\python\\template\\addons\\database\\sqlite",
+]
+`;

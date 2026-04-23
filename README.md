@@ -28,6 +28,8 @@ Answer a few prompts. Your project is ready in under a second.
 - Optional WebSocket support with Socket.io + JWT auth
 - Optional OAuth2 (Google + GitHub) via `@fastify/oauth2`
 - Optional API documentation via Scalar + Swagger UI
+- Optional Claude Code setup — `CLAUDE.md` + pre-configured skills for Claude Code agent
+- Optional Cursor setup — `.cursor/skills/` with pre-configured skills for Cursor agent
 - Auto update notifier — hints when a new version is available
 - Interactive CLI prompts — no flags required
 - Post-scaffold addon injection with `archgen add`
@@ -58,6 +60,9 @@ archgen create my-api --language node --docker --testing --ci
 archgen create my-api --language node --all           # enable all addons at once
 archgen create my-service --language python --author "John Doe"
 archgen create my-app --database postgresql
+archgen create my-app --claude-code                   # add Claude Code setup (CLAUDE.md + skills)
+archgen create my-app --cursor                        # add Cursor agent setup (.cursor/skills/)
+archgen create my-app --claude-code --cursor          # add both AI agent setups
 archgen create my-app --force                         # overwrite existing directory
 archgen create my-app --dry-run                       # preview files without writing
 archgen create my-app --skip-git                      # skip automatic git init
@@ -73,6 +78,8 @@ archgen add ci
 archgen add websocket       # Socket.io + JWT auth + notification helpers
 archgen add oauth           # Google + GitHub OAuth2 routes
 archgen add api-docs        # Scalar UI at /reference + Swagger UI at /docs
+archgen add claude-code     # Claude Code setup (CLAUDE.md + .claude/skills/)
+archgen add cursor          # Cursor agent setup (.cursor/skills/)
 archgen add ci --dry-run    # preview changes without writing
 ```
 

@@ -55,6 +55,16 @@ export class PythonPlugin extends BasePlugin {
         path: path.join(addonsPath, "ci"),
         label: "GitHub Actions CI",
       },
+      {
+        condition: !!options.claudeCode,
+        path: path.join(addonsPath, "claude-code"),
+        label: "Claude Code setup",
+      },
+      {
+        condition: !!options.cursor,
+        path: path.join(addonsPath, "cursor"),
+        label: "Cursor agent setup",
+      },
     ];
   }
 
@@ -89,6 +99,15 @@ export class PythonPlugin extends BasePlugin {
         console.log(`  alembic upgrade head`);
       }
       console.log(`  uvicorn main:app --reload`);
+    }
+    if (options.claudeCode) {
+      console.log("");
+      console.log("  Claude Code — open this project in Claude Code to use pre-configured skills");
+      console.log("  Skills: /python-patterns /python-testing /backend-patterns and more");
+    }
+    if (options.cursor) {
+      console.log("");
+      console.log("  Cursor — .cursor/skills/ ready, open project in Cursor to use agent skills");
     }
     console.log("");
   }
