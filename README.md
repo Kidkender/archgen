@@ -28,11 +28,14 @@ Answer a few prompts. Your project is ready in under a second.
 - Optional WebSocket support with Socket.io + JWT auth
 - Optional OAuth2 (Google + GitHub) via `@fastify/oauth2`
 - Optional API documentation via Scalar + Swagger UI
+- Optional Email support via SMTP (nodemailer) — send welcome, password reset, and custom emails
+- Optional S3 storage (AWS S3 / R2 / MinIO) — upload, presigned URLs, delete, exists
 - Optional Claude Code setup — `CLAUDE.md` + pre-configured skills for Claude Code agent
 - Optional Cursor setup — `.cursor/skills/` with pre-configured skills for Cursor agent
 - Auto update notifier — hints when a new version is available
 - Interactive CLI prompts — no flags required
 - Post-scaffold addon injection with `archgen add`
+- `archgen upgrade` — re-apply all addons from meta to get latest templates
 
 ---
 
@@ -62,6 +65,8 @@ archgen create my-service --language python --author "John Doe"
 archgen create my-app --database postgresql
 archgen create my-app --claude-code                   # add Claude Code setup (CLAUDE.md + skills)
 archgen create my-app --cursor                        # add Cursor agent setup (.cursor/skills/)
+archgen create my-app --email                         # add nodemailer SMTP support
+archgen create my-app --s3                            # add AWS S3 / R2 / MinIO support
 archgen create my-app --claude-code --cursor          # add both AI agent setups
 archgen create my-app --force                         # overwrite existing directory
 archgen create my-app --dry-run                       # preview files without writing
@@ -80,7 +85,17 @@ archgen add oauth           # Google + GitHub OAuth2 routes
 archgen add api-docs        # Scalar UI at /reference + Swagger UI at /docs
 archgen add claude-code     # Claude Code setup (CLAUDE.md + .claude/skills/)
 archgen add cursor          # Cursor agent setup (.cursor/skills/)
+archgen add email           # nodemailer SMTP email support
+archgen add s3              # AWS S3 / R2 / MinIO storage support
 archgen add ci --dry-run    # preview changes without writing
+```
+
+### Upgrade existing project to latest templates
+
+```bash
+cd my-existing-project
+archgen upgrade             # re-apply all addons from .archgen-meta.json
+archgen upgrade --dry-run   # preview what would change
 ```
 
 ### Other commands
@@ -106,6 +121,8 @@ archgen doctor              # check that required tools are installed
 | `--websocket` | Include Socket.io WebSocket support | `false` |
 | `--oauth` | Include Google + GitHub OAuth2 | `false` |
 | `--api-docs` | Include Scalar + Swagger API docs | `false` |
+| `--email` | Include nodemailer SMTP email support | `false` |
+| `--s3` | Include AWS S3 / R2 / MinIO storage | `false` |
 | `-a, --author` | Author name | `Your Name` |
 | `-d, --description` | Project description | — |
 | `--force` | Overwrite existing directory | `false` |

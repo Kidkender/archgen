@@ -5,6 +5,7 @@ import { join } from "path";
 import { AddAddonOptions, GenerateOptions } from "../types";
 import { FileSystem } from "./file-system";
 import { logger } from "./logger";
+import { createSpinner } from "./spinner";
 import { registry } from "./registry";
 import { getNameError } from "./validation";
 import { ArchGenError } from "./errors";
@@ -65,15 +66,16 @@ export class ArchGen {
       return;
     }
 
-    logger.info(`Creating project: ${projectName}`);
+    const spinner = createSpinner(`Creating project: ${projectName}...`);
+    spinner.start();
     const start = performance.now();
 
     try {
       await plugin.generate(projectName, resolvedOptions);
     } catch (error) {
+      spinner.fail(`Failed to create project`);
       try {
         if (this.fs.exists(targetPath)) {
-          logger.info("Rolling back: removing partially created project...");
           await this.fs.removeDir(targetPath);
         }
       } catch (cleanupError) {
@@ -85,14 +87,18 @@ export class ArchGen {
       );
     }
 
+    spinner.succeed(`Project files generated`);
+
     await this.writeMetaFile(targetPath, projectName, options);
 
     if (!options.skipGit) {
+      const gitSpinner = createSpinner("Initializing git repository...");
+      gitSpinner.start();
       try {
-        logger.step("Initializing git repository...");
         execSync("git init", { cwd: targetPath, stdio: "ignore" });
+        gitSpinner.succeed("Git repository initialized");
       } catch {
-        logger.warn("git init skipped (git not found)");
+        gitSpinner.warn("git init skipped (git not found)");
       }
     }
 
@@ -131,6 +137,13 @@ export class ArchGen {
       if (options.testing) enabledAddons.push("testing");
       if (options.ci) enabledAddons.push("ci");
       if (options.husky) enabledAddons.push("husky");
+      if (options.websocket) enabledAddons.push("websocket");
+      if (options.oauth) enabledAddons.push("oauth");
+      if (options.apiDocs) enabledAddons.push("api-docs");
+      if (options.claudeCode) enabledAddons.push("claude-code");
+      if (options.cursor) enabledAddons.push("cursor");
+      if (options.email) enabledAddons.push("email");
+      if (options.s3) enabledAddons.push("s3");
 
       const meta = {
         version: pkg.version,

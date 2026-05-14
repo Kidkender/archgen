@@ -87,6 +87,16 @@ export class NodePlugin extends BasePlugin {
         path: path.join(addonsPath, "cursor"),
         label: "Cursor agent setup",
       },
+      {
+        condition: !!options.email,
+        path: path.join(addonsPath, "email"),
+        label: "Email (Resend)",
+      },
+      {
+        condition: !!options.s3,
+        path: path.join(addonsPath, "s3"),
+        label: "Storage (AWS S3)",
+      },
     ];
   }
 
@@ -102,6 +112,11 @@ export class NodePlugin extends BasePlugin {
       extraDeps["@fastify/cookie"] = "^11.0.2";
     }
     if (addon === "api-docs") extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
+    if (addon === "email") extraDeps["nodemailer"] = "^6.9.0";
+    if (addon === "s3") {
+      extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
+      extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
+    }
 
     if (Object.keys(extraDeps).length === 0) return;
 
@@ -127,6 +142,11 @@ export class NodePlugin extends BasePlugin {
       extraDeps["@fastify/cookie"] = "^11.0.2";
     }
     if (options.apiDocs) extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
+    if (options.email) extraDeps["nodemailer"] = "^6.9.0";
+    if (options.s3) {
+      extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
+      extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
+    }
 
     if (Object.keys(extraDeps).length === 0) return;
 
@@ -199,6 +219,17 @@ export class NodePlugin extends BasePlugin {
     if (options.cursor) {
       console.log("");
       console.log("  Cursor — .cursor/skills/ ready, open project in Cursor to use agent skills");
+    }
+    if (options.email) {
+      console.log("");
+      console.log("  Email (Resend) — set RESEND_API_KEY + EMAIL_FROM in your .env");
+      console.log("  Register emailPlugin in src/app.ts, then inject EmailService into your routes");
+    }
+    if (options.s3) {
+      console.log("");
+      console.log("  Storage (S3) — set S3_BUCKET, S3_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY in .env");
+      console.log("  For Cloudflare R2 / MinIO, set S3_ENDPOINT too");
+      console.log("  Register storagePlugin in src/app.ts, then inject StorageService into your routes");
     }
     console.log("");
   }
