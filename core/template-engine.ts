@@ -36,7 +36,8 @@ export class TemplateEngine {
 
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = new RegExp(`{{${key}}}`, "g");
-      result = result.replace(placeholder, value || "");
+      const safeValue = value || "";
+      result = result.replace(placeholder, () => safeValue);
     });
 
     return result;
@@ -68,10 +69,17 @@ export class TemplateEngine {
     const files = await this.fs.getAllFiles(templatePath);
     const destPaths: string[] = [];
 
+    const resolvedOut = path.resolve(outPath);
+
     for (const file of files) {
       const relativePath = path.relative(templatePath, file);
       const processedRelativePath = this.replaceInString(relativePath, variables);
       const destPath = path.join(outPath, processedRelativePath);
+
+      if (!path.resolve(destPath).startsWith(resolvedOut + path.sep)) {
+        throw new Error(`Template path traversal detected: ${processedRelativePath}`);
+      }
+
       destPaths.push(destPath);
 
       if (!dryRun) {

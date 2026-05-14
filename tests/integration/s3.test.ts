@@ -50,7 +50,6 @@ describe.skipIf(skip)("Storage — AWS S3 integration", () => {
 
     const res = await client.send(command);
     expect(res.$metadata.httpStatusCode).toBe(200);
-    console.log(`  Uploaded: s3://${bucket}/${TEST_KEY}`);
   });
 
   it("verifies uploaded file exists via HeadObject", async () => {
@@ -74,7 +73,6 @@ describe.skipIf(skip)("Storage — AWS S3 integration", () => {
 
     expect(url).toContain(bucket);
     expect(url).toContain(encodeURIComponent(TEST_KEY).replace(/%2F/g, "/"));
-    console.log(`  Presigned URL: ${url.slice(0, 80)}...`);
   });
 
   it("presigned URL is accessible via fetch", async () => {

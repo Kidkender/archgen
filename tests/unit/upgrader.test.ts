@@ -30,7 +30,7 @@ vi.mock("../../core/file-system", () => ({
 }));
 
 vi.mock("../../core/registry", () => ({
-  registry: { get: vi.fn().mockReturnValue(mockPlugin) },
+  registry: { get: vi.fn().mockReturnValue(mockPlugin), list: vi.fn().mockReturnValue(["node", "python"]) },
 }));
 
 vi.mock("fs", () => ({

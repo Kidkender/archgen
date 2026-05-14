@@ -54,6 +54,11 @@ export class Upgrader {
     const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8")) as { version: string };
     const currentVersion = pkg.version;
 
+    const knownLanguages = registry.list();
+    if (!knownLanguages.includes(meta.language)) {
+      throw new ArchGenError("NO_PLUGIN", `Unknown language "${meta.language}" in .archgen-meta.json. Expected one of: ${knownLanguages.join(", ")}`);
+    }
+
     const plugin = registry.get(meta.language);
     if (!plugin) {
       throw new ArchGenError("NO_PLUGIN", `No plugin found for language: ${meta.language}`);

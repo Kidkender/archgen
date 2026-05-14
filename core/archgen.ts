@@ -29,8 +29,13 @@ export class ArchGen {
 
     const targetPath = path.join(basePath, projectName);
 
-    if (!path.resolve(targetPath).startsWith(path.resolve(basePath))) {
+    if (!path.resolve(targetPath).startsWith(path.resolve(basePath) + path.sep)) {
       throw new ArchGenError("INVALID_PATH", "Invalid project path");
+    }
+
+    const nameError = getNameError(projectName);
+    if (nameError) {
+      throw new ArchGenError("NAME_ERROR", `Invalid project name: ${nameError}`);
     }
 
     if (this.fs.exists(targetPath)) {
@@ -43,11 +48,6 @@ export class ArchGen {
           `Folder "${projectName}" already exists! Use --force to overwrite.`,
         );
       }
-    }
-
-    const nameError = getNameError(projectName);
-    if (nameError) {
-      throw new ArchGenError("NAME_ERROR", `Invalid project name: ${nameError}`);
     }
 
     const plugin = registry.get(options.language);
