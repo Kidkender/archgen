@@ -5,9 +5,11 @@ import { createCommand } from "./command";
 import { listCommand } from "./command/list";
 import { infoCommand } from "./command/info";
 import { addCommand } from "./command/add";
+import { upgradeCommand } from "./command/upgrade";
 import { doctorCommand } from "./command/doctor";
 import { completionCommand } from "./command/completion";
 import { logger } from "../core/logger";
+import { setSpinnerLevel } from "../core/spinner";
 import { checkForUpdate } from "../core/update-notifier";
 import chalk from "chalk";
 
@@ -47,6 +49,8 @@ Examples:
   $ archgen info node
   $ archgen add docker
   $ archgen add ci --dry-run
+  $ archgen upgrade
+  $ archgen upgrade --dry-run
   $ archgen doctor
   $ archgen completion bash >> ~/.bashrc
   $ archgen completion zsh >> ~/.zshrc
@@ -56,8 +60,10 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
   const opts = program.opts<{ quiet?: boolean; verbose?: boolean }>();
   if (opts.quiet) {
     logger.setLevel("quiet");
+    setSpinnerLevel("quiet");
   } else if (opts.verbose) {
     logger.setLevel("verbose");
+    setSpinnerLevel("verbose");
   }
   // Pass global flags down to subcommand options
   if (opts.quiet) actionCommand.setOptionValue("quiet", true);
@@ -85,6 +91,7 @@ program.addCommand(createCommand);
 program.addCommand(listCommand);
 program.addCommand(infoCommand);
 program.addCommand(addCommand);
+program.addCommand(upgradeCommand);
 program.addCommand(doctorCommand);
 program.addCommand(completionCommand);
 

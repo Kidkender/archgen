@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.8] - 2026-05-14
+
+### Added
+- **Email addon** (`--email`) — injects `nodemailer` into Node.js projects: `src/config/email.ts` (Zod-validated SMTP env), `src/plugins/email.plugin.ts` (Fastify decorator), `src/modules/email/` with `EmailService` (`send`, `sendWelcome`, `sendPasswordReset`, `sendNotification`), `.env.example` overlay with `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`
+- **S3 addon** (`--s3`) — injects `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` into Node.js projects: `src/config/storage.ts` (Zod-validated env with optional `S3_ENDPOINT` for R2/MinIO), `src/plugins/storage.plugin.ts` (Fastify decorator), `src/modules/storage/` with `StorageService` (`upload`, `getPresignedUrl`, `delete`, `exists`)
+- **`archgen upgrade`** command — re-applies all addons from `.archgen-meta.json` using the latest templates; updates meta version to current CLI version; supports `--dry-run`
+- **ora spinner** — animated spinner during `archgen create` for better UX; respects `--quiet` and `--verbose` flags
+- **Integration tests** — `tests/integration/email-smtp.test.ts` (real Gmail SMTP) and `tests/integration/s3.test.ts` (real AWS S3); both skip gracefully via `describe.skipIf()` when env vars are absent
+- **Unit tests** — `tests/unit/email-s3-addon.test.ts` (33 tests: addon entries + dep injection for email/s3) and `tests/unit/upgrader.test.ts` (14 tests: readMeta + upgrade behavior)
+
 ## [1.0.7] - 2026-04-23
 
 ### Added
