@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.0] - 2026-06-02
+
+### Added
+- **Python parity — 5 new Python addons** bringing Python to feature parity with Node.js:
+  - `--email` — SMTP email service via built-in `smtplib`; `app/core/email.py` + `app/services/external/email_service.py` with `send`, `send_welcome`, `send_password_reset`, `send_notification`
+  - `--s3` — AWS S3 / Cloudflare R2 / MinIO storage via `boto3`; `app/core/storage.py` + `app/services/external/storage_service.py` with `upload`, `get_presigned_url`, `delete`, `exists`; injects `boto3>=1.35.0` into `pyproject.toml`
+  - `--oauth` — Google + GitHub OAuth2 via `httpx` (already in base deps); `app/core/oauth.py`, `app/services/oauth_service.py`, `app/routes/api/v1/oauth.py`; routes at `/api/v1/oauth/google` and `/api/v1/oauth/github`
+  - `--api-docs` — Custom OpenAPI schema with rich description + tag metadata; `app/core/openapi.py` + `main.py` override; Swagger UI at `/docs`, ReDoc at `/redoc`
+  - `--websocket` — Native FastAPI WebSocket with JWT auth; `app/routes/ws/notifications.py` + `app/services/notification_service.py` (`NotificationManager` with `send_to_user`, `broadcast`)
+- **Queue addons** — background job processing for both stacks:
+  - **Node.js `--queue`** — BullMQ + Redis: `src/plugins/queue.plugin.ts` (queue registry), `src/services/queue.service.ts` (wrapper with retry logic), `src/workers/example.worker.ts`; injects `bullmq>=5.0.0`
+  - **Python `--queue`** — arq + Redis (Redis already in base stack): `app/services/queue_service.py` (pool + `enqueue()` helper), `app/workers/example_worker.py` (`WorkerSettings` for arq CLI); injects `arq>=0.26.0`
+- **`archgen config` command** — preset management via `.archgenrc.json`:
+  - `archgen config init` — interactive wizard to create `.archgenrc.json` with default language, author, docker/testing/ci preferences
+  - `archgen config show` — display active preset (searches upward from cwd)
+  - `archgen config reset` — delete `.archgenrc.json` from cwd
+  - `archgen create` now auto-loads preset; CLI flags always take priority
+- **Interactive addon discovery** — `archgen create` interactive mode now shows a multiselect for all extra addons (websocket, oauth, api-docs, email, s3, queue) so users can discover and enable them without memorising flags
+- **`--queue` flag** — new global flag for both Node and Python
+
+### Fixed
+- CLI flag descriptions updated: removed stale "Node.js only" labels from `--websocket`, `--oauth`, `--api-docs`, `--email`, `--s3` which now also work for Python
+
+### Tests
+- **17 new unit tests** in `python-plugin.test.ts` covering all 5 new Python addons (metadata + apply/skip logic)
+- Total: **142 unit tests** (up from 125)
+
 ## [1.0.8] - 2026-05-14
 
 ### Added
