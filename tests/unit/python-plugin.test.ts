@@ -151,3 +151,171 @@ describe("PythonPlugin", () => {
     );
   });
 });
+
+// ─── v1.1 Python parity addon entries ─────────────────────────────────────────
+
+describe("PythonPlugin — v1.1 addons metadata", () => {
+  let plugin: PythonPlugin;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcessTemplate.mockResolvedValue([]);
+    mockFs.exists.mockReturnValue(true);
+    plugin = new PythonPlugin();
+  });
+
+  it("exposes email in addon list", () => {
+    expect(plugin.addons).toContain("email");
+  });
+
+  it("exposes s3 in addon list", () => {
+    expect(plugin.addons).toContain("s3");
+  });
+
+  it("exposes oauth in addon list", () => {
+    expect(plugin.addons).toContain("oauth");
+  });
+
+  it("exposes api-docs in addon list", () => {
+    expect(plugin.addons).toContain("api-docs");
+  });
+
+  it("exposes websocket in addon list", () => {
+    expect(plugin.addons).toContain("websocket");
+  });
+});
+
+describe("PythonPlugin — email addon", () => {
+  let plugin: PythonPlugin;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcessTemplate.mockResolvedValue([]);
+    mockFs.exists.mockReturnValue(true);
+    plugin = new PythonPlugin();
+  });
+
+  it("applies email addon when email=true", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", email: true });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "email")))).toBe(true);
+  });
+
+  it("skips email addon when email=false", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", email: false });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "email")))).toBe(false);
+  });
+
+  it("skips email addon when email is undefined", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api" });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "email")))).toBe(false);
+  });
+});
+
+describe("PythonPlugin — s3 addon", () => {
+  let plugin: PythonPlugin;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcessTemplate.mockResolvedValue([]);
+    mockFs.exists.mockReturnValue(true);
+    plugin = new PythonPlugin();
+  });
+
+  it("applies s3 addon when s3=true", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", s3: true });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "s3")))).toBe(true);
+  });
+
+  it("skips s3 addon when s3=false", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", s3: false });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "s3")))).toBe(false);
+  });
+});
+
+describe("PythonPlugin — oauth addon", () => {
+  let plugin: PythonPlugin;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcessTemplate.mockResolvedValue([]);
+    mockFs.exists.mockReturnValue(true);
+    plugin = new PythonPlugin();
+  });
+
+  it("applies oauth addon when oauth=true", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", oauth: true });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "oauth")))).toBe(true);
+  });
+
+  it("skips oauth addon when oauth=false", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", oauth: false });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "oauth")))).toBe(false);
+  });
+});
+
+describe("PythonPlugin — api-docs addon", () => {
+  let plugin: PythonPlugin;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcessTemplate.mockResolvedValue([]);
+    mockFs.exists.mockReturnValue(true);
+    plugin = new PythonPlugin();
+  });
+
+  it("applies api-docs addon when apiDocs=true", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", apiDocs: true });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "api-docs")))).toBe(true);
+  });
+
+  it("skips api-docs addon when apiDocs=false", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", apiDocs: false });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "api-docs")))).toBe(false);
+  });
+});
+
+describe("PythonPlugin — websocket addon", () => {
+  let plugin: PythonPlugin;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcessTemplate.mockResolvedValue([]);
+    mockFs.exists.mockReturnValue(true);
+    plugin = new PythonPlugin();
+  });
+
+  it("applies websocket addon when websocket=true", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", websocket: true });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "websocket")))).toBe(true);
+  });
+
+  it("skips websocket addon when websocket=false", async () => {
+    await plugin.generate("my-api", { language: "python", outputDir: "/tmp/my-api", websocket: false });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "websocket")))).toBe(false);
+  });
+
+  it("applies multiple addons together correctly", async () => {
+    await plugin.generate("my-api", {
+      language: "python",
+      outputDir: "/tmp/my-api",
+      email: true,
+      oauth: true,
+      websocket: true,
+    });
+    const calls = mockProcessTemplate.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((p) => p.includes(path.join("addons", "email")))).toBe(true);
+    expect(calls.some((p) => p.includes(path.join("addons", "oauth")))).toBe(true);
+    expect(calls.some((p) => p.includes(path.join("addons", "websocket")))).toBe(true);
+  });
+});

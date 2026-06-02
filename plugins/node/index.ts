@@ -97,6 +97,11 @@ export class NodePlugin extends BasePlugin {
         path: path.join(addonsPath, "s3"),
         label: "Storage (AWS S3)",
       },
+      {
+        condition: !!options.queue,
+        path: path.join(addonsPath, "queue"),
+        label: "Queue (BullMQ)",
+      },
     ];
   }
 
@@ -117,6 +122,7 @@ export class NodePlugin extends BasePlugin {
       extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
       extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
     }
+    if (addon === "queue") extraDeps["bullmq"] = "^5.0.0";
 
     if (Object.keys(extraDeps).length === 0) return;
 
@@ -147,6 +153,7 @@ export class NodePlugin extends BasePlugin {
       extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
       extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
     }
+    if (options.queue) extraDeps["bullmq"] = "^5.0.0";
 
     if (Object.keys(extraDeps).length === 0) return;
 
@@ -230,6 +237,12 @@ export class NodePlugin extends BasePlugin {
       console.log("  Storage (S3) — set S3_BUCKET, S3_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY in .env");
       console.log("  For Cloudflare R2 / MinIO, set S3_ENDPOINT too");
       console.log("  Register storagePlugin in src/app.ts, then inject StorageService into your routes");
+    }
+    if (options.queue) {
+      console.log("");
+      console.log("  Queue (BullMQ) — register queuePlugin in src/app.ts");
+      console.log("  Use fastify.queues.getQueue('example') to enqueue jobs");
+      console.log("  Run workers: node dist/src/workers/example.worker.js");
     }
     console.log("");
   }

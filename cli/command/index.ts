@@ -3,6 +3,7 @@ import { ArchGen } from "../../core/archgen";
 import { ArchGenError } from "../../core/errors";
 import { logger } from "../../core/logger";
 import { promptMissingOptions } from "../prompts";
+import { findPresetFile, loadPreset, mergePreset } from "../../core/config-preset";
 
 const VALID_NODE_DATABASES = ["mysql", "postgresql"];
 const VALID_PYTHON_DATABASES = ["postgresql", "sqlite"];
@@ -13,14 +14,15 @@ export const createCommand = new Command("create")
   .option("--docker", "Include Docker setup", false)
   .option("--testing", "Include testing setup", false)
   .option("--ci", "Include GitHub Actions CI workflow", false)
-  .option("--husky", "Include Husky + lint-staged setup (Node.js only)")
-  .option("--websocket", "Include WebSocket support via Socket.io (Node.js only)")
-  .option("--oauth", "Include OAuth2 providers — Google + GitHub (Node.js only)")
-  .option("--api-docs", "Include Scalar API reference UI (Node.js only)")
+  .option("--husky", "Include Husky + lint-staged setup (Node only)")
+  .option("--websocket", "Include WebSocket support (Socket.io for Node, native for Python)")
+  .option("--oauth", "Include OAuth2 providers — Google + GitHub")
+  .option("--api-docs", "Include API reference UI (Scalar for Node, built-in OpenAPI for Python)")
   .option("--claude-code", "Include Claude Code setup (CLAUDE.md + .claude/skills/)")
   .option("--cursor", "Include Cursor agent setup (.cursor/skills/)")
-  .option("--email", "Include Resend email service (Node.js only)")
-  .option("--s3", "Include AWS S3 / Cloudflare R2 storage service (Node.js only)")
+  .option("--email", "Include email service (SMTP)")
+  .option("--s3", "Include AWS S3 / Cloudflare R2 / MinIO storage service")
+  .option("--queue", "Include background job queue (BullMQ for Node, arq for Python)")
   .option("--all", "Include all addons (docker + testing + ci)", false)
   .option("-a, --author <n>", "Author name")
   .option("-d, --description <desc>", "Project description")
@@ -35,6 +37,14 @@ export const createCommand = new Command("create")
       options.docker = true;
       options.testing = true;
       options.ci = true;
+    }
+
+    // Merge .archgenrc.json preset (CLI flags take priority)
+    const presetFile = findPresetFile();
+    if (presetFile) {
+      const preset = loadPreset(presetFile);
+      options = mergePreset(preset, options as Record<string, unknown>) as typeof options;
+      logger.debug(`Loaded preset from ${presetFile}`);
     }
 
     // Database validation is deferred until after prompts resolve the language

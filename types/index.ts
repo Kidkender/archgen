@@ -18,6 +18,7 @@ export interface GenerateOptions {
   cursor?: boolean;
   email?: boolean;
   s3?: boolean;
+  queue?: boolean;
   /** Resolved absolute output path — set internally by ArchGen before calling plugin.generate() */
   outputDir?: string;
 }

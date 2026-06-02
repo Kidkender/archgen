@@ -8,6 +8,7 @@ import { addCommand } from "./command/add";
 import { upgradeCommand } from "./command/upgrade";
 import { doctorCommand } from "./command/doctor";
 import { completionCommand } from "./command/completion";
+import { configCommand } from "./command/config";
 import { logger } from "../core/logger";
 import { setSpinnerLevel } from "../core/spinner";
 import { checkForUpdate } from "../core/update-notifier";
@@ -93,6 +94,7 @@ program.addCommand(infoCommand);
 program.addCommand(addCommand);
 program.addCommand(upgradeCommand);
 program.addCommand(doctorCommand);
+program.addCommand(configCommand);
 program.addCommand(completionCommand);
 
 program.parse();

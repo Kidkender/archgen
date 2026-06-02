@@ -112,6 +112,35 @@ export async function promptMissingOptions(
     });
   }
 
+  const extraAddons = ["websocket", "oauth", "apiDocs", "email", "s3", "queue"] as const;
+  const anyExtraSet = extraAddons.some((k) => options[k] !== undefined);
+  if (!anyExtraSet) {
+    const fixedLang = options.language;
+    questions.push({
+      type: (_prev, values) => {
+        const lang = fixedLang ?? (values as GenerateOptions).language;
+        return lang === "node" || lang === "python" ? "multiselect" : null;
+      },
+      name: "extraAddons",
+      message: "Include extra addons? (Space to select, Enter to confirm)",
+      choices: (_prev, values) => {
+        const lang = fixedLang ?? (values as GenerateOptions).language;
+        const nodeOnly = lang === "node";
+        const all = [
+          { title: "WebSocket", value: "websocket", selected: false },
+          { title: "OAuth2 (Google + GitHub)", value: "oauth", selected: false },
+          { title: "API Docs", value: "apiDocs", selected: false },
+          { title: "Email (SMTP)", value: "email", selected: false },
+          { title: "Storage (S3 / R2 / MinIO)", value: "s3", selected: false },
+          { title: "Queue (BullMQ / arq)", value: "queue", selected: false },
+          { title: "Husky + lint-staged", value: "husky", selected: false, disabled: !nodeOnly },
+        ];
+        return nodeOnly ? all : all.filter((c) => c.value !== "husky");
+      },
+      hint: "none to skip",
+    });
+  }
+
   if (questions.length === 0) return options;
 
   const answers = await prompts(questions, {
@@ -135,6 +164,17 @@ export async function promptMissingOptions(
     raw.claudeCode = (raw.aiAgents as string[]).includes("claude");
     raw.cursor = (raw.aiAgents as string[]).includes("cursor");
     delete raw.aiAgents;
+  }
+  if (Array.isArray(raw.extraAddons)) {
+    const selected = raw.extraAddons as string[];
+    raw.websocket = selected.includes("websocket");
+    raw.oauth = selected.includes("oauth");
+    raw.apiDocs = selected.includes("apiDocs");
+    raw.email = selected.includes("email");
+    raw.s3 = selected.includes("s3");
+    raw.queue = selected.includes("queue");
+    if (selected.includes("husky")) raw.husky = true;
+    delete raw.extraAddons;
   }
   return raw as unknown as GenerateOptions;
 }
