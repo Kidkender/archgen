@@ -1,7 +1,7 @@
 {
   "name": "@kidkender/archgen",
-  "version": "1.2.0",
-  "description": "Generate production-ready Node.js and Python project structures in seconds",
+  "version": "1.3.0",
+  "description": "Generate production-ready Node.js, Python, and Go project structures in seconds",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "exports": {

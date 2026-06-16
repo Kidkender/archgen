@@ -1,6 +1,6 @@
 # archgen
 
-> A CLI tool that generates production-ready backend projects in seconds — so you can focus on building, not configuring.
+> A CLI tool that generates production-ready backend projects in seconds — Node.js, Python, or Go — so you can focus on building, not configuring.
 
 ---
 
@@ -75,6 +75,8 @@ archgen create my-app --claude-code --cursor          # add both AI agent setups
 archgen create my-app --observability                 # add OTel + Prometheus + Grafana
 archgen create my-app --observability --sentry        # add observability + Sentry
 archgen create my-app --pre-commit                    # add pre-commit hooks (Python only)
+archgen create my-api --language go --module-path github.com/user/my-api  # Go project
+archgen create my-api --language go --jwt --docker    # Go with JWT auth + Docker
 archgen create my-app --force                         # overwrite existing directory
 archgen create my-app --dry-run                       # preview files without writing
 archgen create my-app --skip-git                      # skip automatic git init
@@ -97,6 +99,7 @@ archgen add s3              # AWS S3 / R2 / MinIO storage support
 archgen add observability   # OTel + Prometheus + Grafana
 archgen add observability --sentry  # with Sentry error tracking
 archgen add pre-commit      # pre-commit hooks (Python only: ruff + black + mypy)
+archgen add jwt             # JWT auth addon (Go only)
 archgen add ci --dry-run    # preview changes without writing
 ```
 
@@ -136,6 +139,8 @@ archgen doctor              # check that required tools are installed
 | `--observability` | Include OTel + Prometheus + Grafana stack | `false` |
 | `--sentry` | Include Sentry (pair with `--observability`) | `false` |
 | `--pre-commit` | Include pre-commit hooks (Python only) | `false` |
+| `--jwt` | Include JWT auth routes + middleware (Go only) | `false` |
+| `--module-path` | Go module path (e.g. `github.com/user/app`) | prompt |
 | `-a, --author` | Author name | `Your Name` |
 | `-d, --description` | Project description | — |
 | `--force` | Overwrite existing directory | `false` |

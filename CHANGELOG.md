@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - 2026-06-16
+
+### Added
+- **Go plugin** — third language, generates production-ready Go backend:
+  - Router: **chi v5** (thin net/http wrapper, no framework lock-in)
+  - ORM: **GORM v2** + PostgreSQL via pgx driver
+  - Migration: **golang-migrate** (up/down SQL files, consistent with Alembic/Prisma)
+  - Config: **godotenv** + `internal/config` struct
+  - Dev: **air** hot reload + **Makefile** with `dev`, `build`, `migrate-up/down`, `test`, `lint`
+  - Logger: **slog** (stdlib, no dependency)
+- **`--jwt` addon (Go)** — JWT auth overlay: `AuthService`, `Claims`, bcrypt password hashing, `middleware.Auth()` chi middleware, user CRUD handlers, GORM soft-delete model, migration `000002_create_users`
+- **`--module-path` flag** — Go module path (e.g. `github.com/username/my-app`); prompted interactively for Go projects, defaults to `github.com/example/<name>` in non-TTY
+- **Docker addon (Go)** — multi-stage `Dockerfile` (golang:1.22-alpine → alpine:3.20), `docker-compose.yml` with PostgreSQL healthcheck
+- **CI addon (Go)** — GitHub Actions workflow with PostgreSQL service, `go vet`, `go test -race`
+- **Testing addon (Go)** — `tests/health_test.go` using `net/http/httptest`, no external deps
+- **`archgen add jwt`** — inject JWT addon into existing Go projects; reads module path from `go.mod` for correct placeholder replacement
+- Go language choice added to interactive prompts; `database` prompt skipped for Go (always PostgreSQL)
+- Go project detection in `detectProjectLanguage()` via `go.mod` presence
+
+### Fixed
+- `--module-path` flag correctly maps to `options.modulePath` (previously `--module` did not bind due to Commander camelCase convention)
+
 ## [1.2.0] - 2026-06-16
 
 ### Added
