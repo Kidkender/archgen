@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.1] - 2026-06-16
+
+### Security
+- Updated devDependencies to patch known CVEs (none affect published package — all are devDep-only):
+  - `nodemailer` 8.0.7 → 9.0.0 (CRLF injection, TLS bypass, disableFileAccess bypass)
+  - `vite` pinned to 8.0.5 (server.fs.deny bypass, WebSocket arbitrary file read)
+  - `esbuild` forced to 0.28.1 via pnpm overrides (RCE via NPM_CONFIG_REGISTRY, Windows file read)
+  - `picomatch` forced to 4.0.4 via pnpm overrides (ReDoS via extglob quantifiers)
+
 ## [1.3.0] - 2026-06-16
 
 ### Added
