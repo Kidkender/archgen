@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2026-06-16
+
+### Added
+- **`--observability` addon (Node.js + Python)** — production-grade observability stack:
+  - Node.js: `src/telemetry.ts` (OpenTelemetry SDK auto-init), `src/plugins/metrics.plugin.ts` (Prometheus `/metrics` endpoint via `prom-client`), `src/config/sentry.ts` (Sentry stub, gated by `SENTRY_DSN`)
+  - Python: `app/core/observability.py` (`instrument_app(app)` — OTel + FastAPI instrumentation + Prometheus via `prometheus-fastapi-instrumentator`), `app/core/sentry.py` (Sentry stub)
+  - Both: `observability/prometheus.yml`, `observability/docker-compose.observability.yml` (Prometheus + Grafana + OTel Collector), `observability/otel-collector.yml`, `observability/grafana-dashboard.json` (request rate, p95 latency, error rate, active handles panels)
+  - Does **not** overwrite `app.ts`/`main.py` — overlay is additive, safe to combine with oauth/api-docs
+  - Deps injected: `@opentelemetry/sdk-node`, `@opentelemetry/auto-instrumentations-node`, `@opentelemetry/exporter-trace-otlp-http`, `prom-client` (Node); `opentelemetry-sdk`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-exporter-otlp-proto-http`, `prometheus-fastapi-instrumentator`, `structlog` (Python)
+- **`--sentry` sub-flag** — pair with `--observability` to inject `@sentry/node` / `sentry-sdk[fastapi]` into the project manifest; also supported via `archgen add observability --sentry`
+- **`--pre-commit` addon (Python only)** — git hook suite matching Node.js `--husky`:
+  - `.pre-commit-config.yaml` with `ruff` (lint + format), `ruff-format`, `black`, `mypy`, trailing-whitespace, end-of-file-fixer
+  - Injects `pre-commit>=3.7.0` into `[project.optional-dependencies] dev`
+  - Next steps printed: `pre-commit install`
+- **`archgen add observability --sentry`** — `AddAddonOptions` now accepts `sentry?: boolean` so Sentry dep injection works for post-scaffold addon injection too
+- **Improved test quality in generated projects**:
+  - Node.js testing addon: fixed import path bug (`../../../base/src/app` → `../src/app`); added `tests/users.test.ts` (401/200/404 flow with auth); `jest.config.js` overlay with `coverageThreshold: 80%`
+  - Python testing addon: `conftest.py` now overrides `get_db` dependency → SQLite in-memory isolation; added `tests/test_auth.py` (register/login/401 flows) and `tests/test_users.py` (CRUD + auth guard); `pytest.ini` overlay with `--cov-fail-under=80`; `aiosqlite>=0.20.0` injected into dev deps automatically
+
+### Fixed
+- **Python testing addon** — `aiosqlite` (required by `sqlite+aiosqlite:///:memory:` in conftest) now injected into `[project.optional-dependencies] dev` when `--testing` is enabled
+- **Python dep injection** — new `_injectPyprojectDeps(deps[])` batch helper replaces single-dep injection; new `_injectPyprojectDevDeps(deps[])` targets `[project.optional-dependencies] dev` array for dev-only packages
+- **`archgen add` argument description** — removed stale `(docker|testing|ci|husky)` hint; now points to `archgen list`
+
+### Tests
+- **New unit test file** `observability-addon.test.ts` — 18 tests covering Node and Python observability wiring, pre-commit overlay, sentry flag, aiosqlite injection, dry-run guards, and no-app.ts-overwrite assertion
+- Total: **160 unit tests** (up from 142)
+
 ## [1.1.0] - 2026-06-02
 
 ### Added

@@ -15,6 +15,9 @@ export async function promptMissingOptions(
       husky: false,
       claudeCode: false,
       cursor: false,
+      preCommit: false,
+      observability: false,
+      sentry: false,
       ...options,
       language: options.language ?? "node",
     };
@@ -112,7 +115,7 @@ export async function promptMissingOptions(
     });
   }
 
-  const extraAddons = ["websocket", "oauth", "apiDocs", "email", "s3", "queue"] as const;
+  const extraAddons = ["websocket", "oauth", "apiDocs", "email", "s3", "queue", "observability", "preCommit"] as const;
   const anyExtraSet = extraAddons.some((k) => options[k] !== undefined);
   if (!anyExtraSet) {
     const fixedLang = options.language;
@@ -126,6 +129,7 @@ export async function promptMissingOptions(
       choices: (_prev, values) => {
         const lang = fixedLang ?? (values as GenerateOptions).language;
         const nodeOnly = lang === "node";
+        const pythonOnly = lang === "python";
         const all = [
           { title: "WebSocket", value: "websocket", selected: false },
           { title: "OAuth2 (Google + GitHub)", value: "oauth", selected: false },
@@ -133,9 +137,12 @@ export async function promptMissingOptions(
           { title: "Email (SMTP)", value: "email", selected: false },
           { title: "Storage (S3 / R2 / MinIO)", value: "s3", selected: false },
           { title: "Queue (BullMQ / arq)", value: "queue", selected: false },
+          { title: "Observability (OTel + Prometheus)", value: "observability", selected: false },
           { title: "Husky + lint-staged", value: "husky", selected: false, disabled: !nodeOnly },
+          { title: "pre-commit hooks (ruff + black + mypy)", value: "preCommit", selected: false, disabled: !pythonOnly },
         ];
-        return nodeOnly ? all : all.filter((c) => c.value !== "husky");
+        if (nodeOnly) return all.filter((c) => c.value !== "preCommit");
+        return all.filter((c) => c.value !== "husky");
       },
       hint: "none to skip",
     });
@@ -174,6 +181,8 @@ export async function promptMissingOptions(
     raw.s3 = selected.includes("s3");
     raw.queue = selected.includes("queue");
     if (selected.includes("husky")) raw.husky = true;
+    if (selected.includes("observability")) raw.observability = true;
+    if (selected.includes("preCommit")) raw.preCommit = true;
     delete raw.extraAddons;
   }
   return raw as unknown as GenerateOptions;

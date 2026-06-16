@@ -19,6 +19,9 @@ export interface GenerateOptions {
   email?: boolean;
   s3?: boolean;
   queue?: boolean;
+  preCommit?: boolean;
+  observability?: boolean;
+  sentry?: boolean;
   /** Resolved absolute output path — set internally by ArchGen before calling plugin.generate() */
   outputDir?: string;
 }
@@ -37,6 +40,7 @@ export interface StackInfo {
 
 export interface AddAddonOptions {
   dryRun?: boolean;
+  sentry?: boolean;
 }
 
 export interface Plugin {

@@ -32,6 +32,9 @@ Answer a few prompts. Your project is ready in under a second.
 - Optional S3 storage (AWS S3 / R2 / MinIO) — upload, presigned URLs, delete, exists
 - Optional Claude Code setup — `CLAUDE.md` + pre-configured skills for Claude Code agent
 - Optional Cursor setup — `.cursor/skills/` with pre-configured skills for Cursor agent
+- Optional observability stack — OpenTelemetry traces + Prometheus `/metrics` + Grafana dashboard + OTel Collector (both Node.js and Python)
+- Optional Sentry error tracking — injected alongside `--observability`
+- Optional pre-commit hooks (Python) — ruff + black + mypy via `.pre-commit-config.yaml`
 - Auto update notifier — hints when a new version is available
 - Interactive CLI prompts — no flags required
 - Post-scaffold addon injection with `archgen add`
@@ -68,6 +71,9 @@ archgen create my-app --cursor                        # add Cursor agent setup (
 archgen create my-app --email                         # add nodemailer SMTP support
 archgen create my-app --s3                            # add AWS S3 / R2 / MinIO support
 archgen create my-app --claude-code --cursor          # add both AI agent setups
+archgen create my-app --observability                 # add OTel + Prometheus + Grafana
+archgen create my-app --observability --sentry        # add observability + Sentry
+archgen create my-app --pre-commit                    # add pre-commit hooks (Python only)
 archgen create my-app --force                         # overwrite existing directory
 archgen create my-app --dry-run                       # preview files without writing
 archgen create my-app --skip-git                      # skip automatic git init
@@ -87,6 +93,9 @@ archgen add claude-code     # Claude Code setup (CLAUDE.md + .claude/skills/)
 archgen add cursor          # Cursor agent setup (.cursor/skills/)
 archgen add email           # nodemailer SMTP email support
 archgen add s3              # AWS S3 / R2 / MinIO storage support
+archgen add observability   # OTel + Prometheus + Grafana
+archgen add observability --sentry  # with Sentry error tracking
+archgen add pre-commit      # pre-commit hooks (Python only: ruff + black + mypy)
 archgen add ci --dry-run    # preview changes without writing
 ```
 
@@ -123,6 +132,9 @@ archgen doctor              # check that required tools are installed
 | `--api-docs` | Include Scalar + Swagger API docs | `false` |
 | `--email` | Include nodemailer SMTP email support | `false` |
 | `--s3` | Include AWS S3 / R2 / MinIO storage | `false` |
+| `--observability` | Include OTel + Prometheus + Grafana stack | `false` |
+| `--sentry` | Include Sentry (pair with `--observability`) | `false` |
+| `--pre-commit` | Include pre-commit hooks (Python only) | `false` |
 | `-a, --author` | Author name | `Your Name` |
 | `-d, --description` | Project description | — |
 | `--force` | Overwrite existing directory | `false` |
