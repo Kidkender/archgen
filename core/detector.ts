@@ -1,12 +1,13 @@
 import fs from "fs-extra";
 import path from "path";
 
-export type DetectedLanguage = "node" | "python" | null;
+export type DetectedLanguage = "node" | "python" | "go" | null;
 
 export function detectProjectLanguage(cwd: string): DetectedLanguage {
   const pkgPath = path.join(cwd, "package.json");
   const pyprojectPath = path.join(cwd, "pyproject.toml");
   const mainPyPath = path.join(cwd, "main.py");
+  const goModPath = path.join(cwd, "go.mod");
 
   if (fs.existsSync(pkgPath)) {
     try {
@@ -23,6 +24,10 @@ export function detectProjectLanguage(cwd: string): DetectedLanguage {
 
   if (fs.existsSync(pyprojectPath) || fs.existsSync(mainPyPath)) {
     return "python";
+  }
+
+  if (fs.existsSync(goModPath)) {
+    return "go";
   }
 
   return null;

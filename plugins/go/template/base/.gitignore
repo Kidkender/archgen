@@ -1,0 +1,15 @@
+# Binaries
+bin/
+tmp/
+*.exe
+
+# Environment
+.env
+
+# Go
+vendor/
+*.test
+
+# IDE
+.idea/
+.vscode/

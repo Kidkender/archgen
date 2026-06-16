@@ -22,6 +22,10 @@ export interface GenerateOptions {
   preCommit?: boolean;
   observability?: boolean;
   sentry?: boolean;
+  /** Go module path, e.g. github.com/username/my-app */
+  modulePath?: string;
+  /** JWT authentication addon (Go only) */
+  jwt?: boolean;
   /** Resolved absolute output path — set internally by ArchGen before calling plugin.generate() */
   outputDir?: string;
 }

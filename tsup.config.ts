@@ -16,6 +16,7 @@ export default defineConfig({
   shims: true,
   loader: {
     ".py": "copy",
+    ".go": "copy",
     ".md": "copy",
     ".json": "copy",
     ".toml": "copy",
@@ -24,6 +25,9 @@ export default defineConfig({
     ".yaml": "copy",
     ".txt": "copy",
     ".example": "copy",
+    ".mod": "copy",
+    ".sum": "copy",
+    ".air": "copy",
   },
   onSuccess: async () => {
     const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +41,12 @@ export default defineConfig({
     await copy(
       join(__dirname, "plugins/python/template"),
       join(__dirname, "dist/plugins/python/template"),
+      { filter: templateFilter },
+    );
+
+    await copy(
+      join(__dirname, "plugins/go/template"),
+      join(__dirname, "dist/plugins/go/template"),
       { filter: templateFilter },
     );
 

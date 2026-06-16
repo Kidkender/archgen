@@ -48,6 +48,7 @@ Answer a few prompts. Your project is ready in under a second.
 |----------|-------|
 | Node.js  | TypeScript · Fastify · Prisma · MariaDB/MySQL · Redis · JWT · Zod · Pino · Swagger |
 | Python   | FastAPI · SQLAlchemy 2.0 · Alembic · PostgreSQL · Redis · Pydantic v2 · APScheduler |
+| Go       | chi v5 · GORM v2 · PostgreSQL · golang-migrate · godotenv · slog · air |
 
 ---
 
