@@ -15,6 +15,10 @@ export async function promptMissingOptions(
       husky: false,
       claudeCode: false,
       cursor: false,
+      preCommit: false,
+      observability: false,
+      sentry: false,
+      jwt: false,
       ...options,
       language: options.language ?? "node",
     };
@@ -30,6 +34,7 @@ export async function promptMissingOptions(
       choices: [
         { title: "Node.js (TypeScript + Fastify)", value: "node" },
         { title: "Python (FastAPI)", value: "python" },
+        { title: "Go (chi + GORM + PostgreSQL)", value: "go" },
       ],
     });
   }
@@ -56,6 +61,19 @@ export async function promptMissingOptions(
           { title: "PostgreSQL", value: "postgresql" },
         ];
       },
+    });
+  }
+
+  if (!options.modulePath) {
+    const fixedLang = options.language;
+    questions.push({
+      type: (_prev, values) => {
+        const lang = fixedLang ?? (values as GenerateOptions).language;
+        return lang === "go" ? "text" : null;
+      },
+      name: "modulePath",
+      message: "Go module path:",
+      initial: `github.com/example/${_projectName}`,
     });
   }
 
@@ -112,20 +130,26 @@ export async function promptMissingOptions(
     });
   }
 
-  const extraAddons = ["websocket", "oauth", "apiDocs", "email", "s3", "queue"] as const;
-  const anyExtraSet = extraAddons.some((k) => options[k] !== undefined);
+  const extraAddons = ["websocket", "oauth", "apiDocs", "email", "s3", "queue", "observability", "preCommit", "jwt"] as const;
+  const anyExtraSet = extraAddons.some((k) => options[k as keyof GenerateOptions] !== undefined);
   if (!anyExtraSet) {
     const fixedLang = options.language;
     questions.push({
       type: (_prev, values) => {
         const lang = fixedLang ?? (values as GenerateOptions).language;
-        return lang === "node" || lang === "python" ? "multiselect" : null;
+        return lang === "node" || lang === "python" || lang === "go" ? "multiselect" : null;
       },
       name: "extraAddons",
       message: "Include extra addons? (Space to select, Enter to confirm)",
       choices: (_prev, values) => {
         const lang = fixedLang ?? (values as GenerateOptions).language;
+        if (lang === "go") {
+          return [
+            { title: "JWT authentication", value: "jwt", selected: false },
+          ];
+        }
         const nodeOnly = lang === "node";
+        const pythonOnly = lang === "python";
         const all = [
           { title: "WebSocket", value: "websocket", selected: false },
           { title: "OAuth2 (Google + GitHub)", value: "oauth", selected: false },
@@ -133,9 +157,12 @@ export async function promptMissingOptions(
           { title: "Email (SMTP)", value: "email", selected: false },
           { title: "Storage (S3 / R2 / MinIO)", value: "s3", selected: false },
           { title: "Queue (BullMQ / arq)", value: "queue", selected: false },
+          { title: "Observability (OTel + Prometheus)", value: "observability", selected: false },
           { title: "Husky + lint-staged", value: "husky", selected: false, disabled: !nodeOnly },
+          { title: "pre-commit hooks (ruff + black + mypy)", value: "preCommit", selected: false, disabled: !pythonOnly },
         ];
-        return nodeOnly ? all : all.filter((c) => c.value !== "husky");
+        if (nodeOnly) return all.filter((c) => c.value !== "preCommit");
+        return all.filter((c) => c.value !== "husky");
       },
       hint: "none to skip",
     });
@@ -174,6 +201,9 @@ export async function promptMissingOptions(
     raw.s3 = selected.includes("s3");
     raw.queue = selected.includes("queue");
     if (selected.includes("husky")) raw.husky = true;
+    if (selected.includes("observability")) raw.observability = true;
+    if (selected.includes("preCommit")) raw.preCommit = true;
+    if (selected.includes("jwt")) raw.jwt = true;
     delete raw.extraAddons;
   }
   return raw as unknown as GenerateOptions;

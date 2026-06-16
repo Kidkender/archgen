@@ -7,6 +7,7 @@ import { findPresetFile, loadPreset, mergePreset } from "../../core/config-prese
 
 const VALID_NODE_DATABASES = ["mysql", "postgresql"];
 const VALID_PYTHON_DATABASES = ["postgresql", "sqlite"];
+const VALID_GO_DATABASES = ["postgresql"];
 
 export const createCommand = new Command("create")
   .argument("<project-name>", "Name of the project")
@@ -23,6 +24,11 @@ export const createCommand = new Command("create")
   .option("--email", "Include email service (SMTP)")
   .option("--s3", "Include AWS S3 / Cloudflare R2 / MinIO storage service")
   .option("--queue", "Include background job queue (BullMQ for Node, arq for Python)")
+  .option("--pre-commit", "Include pre-commit hooks (Python only: ruff + black + mypy)")
+  .option("--observability", "Include observability stack (OpenTelemetry + Prometheus + Sentry stub)")
+  .option("--sentry", "Include Sentry error tracking dependency (requires --observability)")
+  .option("--jwt", "Include JWT authentication (Go only)")
+  .option("--module-path <path>", "Go module path (e.g. github.com/username/my-app)")
   .option("--all", "Include all addons (docker + testing + ci)", false)
   .option("-a, --author <n>", "Author name")
   .option("-d, --description <desc>", "Project description")
@@ -52,7 +58,10 @@ export const createCommand = new Command("create")
 
     if (finalOptions.database) {
       const lang = finalOptions.language;
-      const valid = lang === "python" ? VALID_PYTHON_DATABASES : VALID_NODE_DATABASES;
+      const valid =
+        lang === "python" ? VALID_PYTHON_DATABASES :
+        lang === "go" ? VALID_GO_DATABASES :
+        VALID_NODE_DATABASES;
       if (!valid.includes(finalOptions.database)) {
         logger.error(
           `Invalid database "${finalOptions.database}" for ${lang}. Must be one of: ${valid.join(", ")}`,

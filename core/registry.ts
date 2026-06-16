@@ -1,5 +1,6 @@
 import { NodePlugin } from "../plugins/node";
 import { PythonPlugin } from "../plugins/python";
+import { GoPlugin } from "../plugins/go";
 import { Plugin } from "../types";
 
 class PluginRegistry {
@@ -12,7 +13,8 @@ class PluginRegistry {
 
   private registerDefaults() {
     this.register("node", new NodePlugin());
-    this.register("python", new PythonPlugin())
+    this.register("python", new PythonPlugin());
+    this.register("go", new GoPlugin());
   }
 
   register(name: string, plugin: Plugin) {

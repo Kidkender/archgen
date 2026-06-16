@@ -102,6 +102,11 @@ export class NodePlugin extends BasePlugin {
         path: path.join(addonsPath, "queue"),
         label: "Queue (BullMQ)",
       },
+      {
+        condition: !!options.observability,
+        path: path.join(addonsPath, "observability"),
+        label: "Observability (OTel + Prometheus)",
+      },
     ];
   }
 
@@ -123,6 +128,13 @@ export class NodePlugin extends BasePlugin {
       extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
     }
     if (addon === "queue") extraDeps["bullmq"] = "^5.0.0";
+    if (addon === "observability") {
+      extraDeps["@opentelemetry/sdk-node"] = "^0.51.0";
+      extraDeps["@opentelemetry/auto-instrumentations-node"] = "^0.46.0";
+      extraDeps["@opentelemetry/exporter-trace-otlp-http"] = "^0.51.0";
+      extraDeps["prom-client"] = "^15.1.0";
+      if (options.sentry) extraDeps["@sentry/node"] = "^8.0.0";
+    }
 
     if (Object.keys(extraDeps).length === 0) return;
 
@@ -154,6 +166,13 @@ export class NodePlugin extends BasePlugin {
       extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
     }
     if (options.queue) extraDeps["bullmq"] = "^5.0.0";
+    if (options.observability) {
+      extraDeps["@opentelemetry/sdk-node"] = "^0.51.0";
+      extraDeps["@opentelemetry/auto-instrumentations-node"] = "^0.46.0";
+      extraDeps["@opentelemetry/exporter-trace-otlp-http"] = "^0.51.0";
+      extraDeps["prom-client"] = "^15.1.0";
+      if (options.sentry) extraDeps["@sentry/node"] = "^8.0.0";
+    }
 
     if (Object.keys(extraDeps).length === 0) return;
 
@@ -243,6 +262,24 @@ export class NodePlugin extends BasePlugin {
       console.log("  Queue (BullMQ) — register queuePlugin in src/app.ts");
       console.log("  Use fastify.queues.getQueue('example') to enqueue jobs");
       console.log("  Run workers: node dist/src/workers/example.worker.js");
+    }
+    if (options.observability) {
+      console.log("");
+      console.log("  Observability — add to the TOP of src/index.ts:");
+      console.log(`  import './telemetry'; // must be first import`);
+      console.log(`  Then register metricsPlugin in src/app.ts:`);
+      console.log(`  import metricsPlugin from './plugins/metrics.plugin';`);
+      console.log(`  await app.register(metricsPlugin);`);
+      console.log(`  Metrics available at: http://localhost:3000/metrics`);
+      console.log(`  Grafana dashboard: observability/grafana-dashboard.json`);
+      console.log(`  Stack: docker compose -f observability/docker-compose.observability.yml up -d`);
+      if (options.sentry) {
+        console.log("");
+        console.log("  Sentry — call initSentry() in src/index.ts before buildApp():");
+        console.log(`  import { initSentry } from './config/sentry';`);
+        console.log(`  initSentry();`);
+        console.log(`  Set SENTRY_DSN in .env`);
+      }
     }
     console.log("");
   }

@@ -1,4 +1,4 @@
-import { buildApp } from "../../../base/src/app";
+import { buildApp } from '../src/app';
 
 describe('Health endpoints', () => {
   let app: Awaited<ReturnType<typeof buildApp>>;

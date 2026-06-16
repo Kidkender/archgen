@@ -97,6 +97,16 @@ export class PythonPlugin extends BasePlugin {
         path: path.join(addonsPath, "queue"),
         label: "Queue (arq + Redis)",
       },
+      {
+        condition: !!options.preCommit,
+        path: path.join(addonsPath, "pre-commit"),
+        label: "pre-commit hooks (ruff + black + mypy)",
+      },
+      {
+        condition: !!options.observability,
+        path: path.join(addonsPath, "observability"),
+        label: "Observability (OTel + Prometheus + Sentry stub)",
+      },
     ];
   }
 
@@ -104,15 +114,32 @@ export class PythonPlugin extends BasePlugin {
     await super.applyAddon(projectPath, addon, options);
     if (options.dryRun) return;
 
+    const pyprojectPath = path.join(projectPath, "pyproject.toml");
     if (addon === "s3") {
-      const pyprojectPath = path.join(projectPath, "pyproject.toml");
       await this._injectPyprojectDep(pyprojectPath, "boto3>=1.35.0");
       logger.info("Updated pyproject.toml with boto3");
     }
     if (addon === "queue") {
-      const pyprojectPath = path.join(projectPath, "pyproject.toml");
       await this._injectPyprojectDep(pyprojectPath, "arq>=0.26.0");
       logger.info("Updated pyproject.toml with arq");
+    }
+    if (addon === "testing") {
+      await this._injectPyprojectDevDeps(pyprojectPath, ["aiosqlite>=0.20.0"]);
+      logger.info("Updated pyproject.toml with aiosqlite");
+    }
+    if (addon === "pre-commit") {
+      await this._injectPyprojectDevDeps(pyprojectPath, ["pre-commit>=3.7.0"]);
+      logger.info("Updated pyproject.toml with pre-commit");
+    }
+    if (addon === "observability") {
+      await this._injectPyprojectDeps(pyprojectPath, [
+        "opentelemetry-sdk>=1.24.0",
+        "opentelemetry-instrumentation-fastapi>=0.45b0",
+        "opentelemetry-exporter-otlp-proto-http>=1.24.0",
+        "prometheus-fastapi-instrumentator>=7.0.0",
+        "structlog>=24.1.0",
+      ]);
+      logger.info("Updated pyproject.toml with observability deps");
     }
   }
 
@@ -120,30 +147,61 @@ export class PythonPlugin extends BasePlugin {
     await super.generate(projectName, options);
     if (options.dryRun) return;
 
-    if (options.s3) {
-      const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
-      const pyprojectPath = path.join(outputPath, "pyproject.toml");
-      await this._injectPyprojectDep(pyprojectPath, "boto3>=1.35.0");
-    }
-    if (options.queue) {
-      const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
-      const pyprojectPath = path.join(outputPath, "pyproject.toml");
-      await this._injectPyprojectDep(pyprojectPath, "arq>=0.26.0");
+    const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
+    const pyprojectPath = path.join(outputPath, "pyproject.toml");
+
+    if (options.s3) await this._injectPyprojectDep(pyprojectPath, "boto3>=1.35.0");
+    if (options.queue) await this._injectPyprojectDep(pyprojectPath, "arq>=0.26.0");
+    if (options.testing) await this._injectPyprojectDevDeps(pyprojectPath, ["aiosqlite>=0.20.0"]);
+    if (options.preCommit) await this._injectPyprojectDevDeps(pyprojectPath, ["pre-commit>=3.7.0"]);
+    if (options.observability) {
+      await this._injectPyprojectDeps(pyprojectPath, [
+        "opentelemetry-sdk>=1.24.0",
+        "opentelemetry-instrumentation-fastapi>=0.45b0",
+        "opentelemetry-exporter-otlp-proto-http>=1.24.0",
+        "prometheus-fastapi-instrumentator>=7.0.0",
+        "structlog>=24.1.0",
+      ]);
+      if (options.sentry) {
+        await this._injectPyprojectDeps(pyprojectPath, ["sentry-sdk[fastapi]>=2.0.0"]);
+      }
     }
   }
 
   private async _injectPyprojectDep(pyprojectPath: string, dep: string): Promise<void> {
+    return this._injectPyprojectDeps(pyprojectPath, [dep]);
+  }
+
+  private async _injectPyprojectDeps(pyprojectPath: string, deps: string[]): Promise<void> {
     try {
       let content = await fs.readFile(pyprojectPath, "utf8");
-      if (content.includes(dep.split(">=")[0])) return;
-      // Insert before the closing ] of the dependencies array
+      const toAdd = deps.filter((d) => !content.includes(d.split(">=")[0].split("[")[0]));
+      if (toAdd.length === 0) return;
+      const lines = toAdd.map((d) => `    "${d}",`).join("\n");
       content = content.replace(
         /^(\s*"pyjwt[^"]*",?\n)(\])/m,
-        `$1    "${dep}",\n$2`,
+        `$1${lines}\n$2`,
       );
       await fs.writeFile(pyprojectPath, content, "utf8");
     } catch {
-      logger.warn(`Could not inject ${dep} into pyproject.toml`);
+      logger.warn(`Could not inject deps into pyproject.toml`);
+    }
+  }
+
+  private async _injectPyprojectDevDeps(pyprojectPath: string, deps: string[]): Promise<void> {
+    try {
+      let content = await fs.readFile(pyprojectPath, "utf8");
+      const toAdd = deps.filter((d) => !content.includes(d.split(">=")[0].split("[")[0]));
+      if (toAdd.length === 0) return;
+      const lines = toAdd.map((d) => `    "${d}",`).join("\n");
+      // Inject before the closing ] of [project.optional-dependencies] dev array
+      content = content.replace(
+        /^(\s*"mypy[^"]*",?\n)(\])/m,
+        `$1${lines}\n$2`,
+      );
+      await fs.writeFile(pyprojectPath, content, "utf8");
+    } catch {
+      logger.warn(`Could not inject dev deps into pyproject.toml`);
     }
   }
 
@@ -221,6 +279,29 @@ export class PythonPlugin extends BasePlugin {
     if (options.cursor) {
       console.log("");
       console.log("  Cursor — .cursor/skills/ ready, open project in Cursor to use agent skills");
+    }
+    if (options.preCommit) {
+      console.log("");
+      console.log("  pre-commit — install hooks after setting up your virtualenv:");
+      console.log(`  pip install pre-commit`);
+      console.log(`  pre-commit install`);
+      console.log(`  # Hooks run automatically on each git commit (ruff + black + mypy)`);
+    }
+    if (options.observability) {
+      console.log("");
+      console.log("  Observability — add to main.py after creating the FastAPI app:");
+      console.log(`  from app.core.observability import instrument_app`);
+      console.log(`  instrument_app(app)`);
+      console.log(`  Metrics available at: http://localhost:8000/metrics`);
+      console.log(`  Grafana dashboard: observability/grafana-dashboard.json`);
+      console.log(`  Stack: docker compose -f observability/docker-compose.observability.yml up -d`);
+      if (options.sentry) {
+        console.log("");
+        console.log("  Sentry — add to main.py before creating the app:");
+        console.log(`  from app.core.sentry import init_sentry`);
+        console.log(`  init_sentry()`);
+        console.log(`  Set SENTRY_DSN in .env`);
+      }
     }
     console.log("");
   }

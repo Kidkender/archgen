@@ -6,10 +6,11 @@ import { logger } from "../../core/logger";
 import { registry } from "../../core/registry";
 
 export const addCommand = new Command("add")
-  .argument("<addon>", "Addon to inject (docker|testing|ci|husky)")
+  .argument("<addon>", "Addon to inject (run 'archgen list' to see available addons)")
   .option("--dry-run", "Preview files without writing", false)
+  .option("--sentry", "Include Sentry dep when adding observability addon", false)
   .description("Add an addon to an existing project in the current directory")
-  .action(async (addon: string, options: { dryRun: boolean }) => {
+  .action(async (addon: string, options: { dryRun: boolean; sentry: boolean }) => {
     const cwd = process.cwd();
     const language = detectProjectLanguage(cwd);
 
@@ -37,7 +38,7 @@ export const addCommand = new Command("add")
 
     const archgen = new ArchGen();
     try {
-      await archgen.addAddon(cwd, language, addon, { dryRun: options.dryRun });
+      await archgen.addAddon(cwd, language, addon, { dryRun: options.dryRun, sentry: options.sentry });
     } catch (error) {
       if (error instanceof ArchGenError) {
         logger.error(error.message);
