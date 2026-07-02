@@ -4,7 +4,48 @@ import { TemplateVariables } from "../../core/template-engine";
 import { AddAddonOptions, GenerateOptions, StackInfo } from "../../types";
 import { nodeConfig } from "./config";
 import { logger } from "../../core/logger";
+import { assertAddonRequires } from "../../core/addon-requires";
 import fs from "fs-extra";
+
+/** Single source of truth for addon → npm dependency mapping, shared by generate() and applyAddon(). */
+const ADDON_DEPENDENCIES: Record<string, (sentry: boolean) => Record<string, string>> = {
+  websocket: () => ({ "socket.io": "^4.8.1" }),
+  oauth: () => ({
+    "@fastify/oauth2": "^8.1.0",
+    "@fastify/cookie": "^11.0.2",
+  }),
+  "api-docs": () => ({ "@scalar/fastify-api-reference": "^1.25.0" }),
+  email: () => ({ nodemailer: "^6.9.0" }),
+  s3: () => ({
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+  }),
+  queue: () => ({ bullmq: "^5.0.0" }),
+  observability: (sentry) => ({
+    "@opentelemetry/sdk-node": "^0.51.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.46.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0",
+    "prom-client": "^15.1.0",
+    ...(sentry ? { "@sentry/node": "^8.0.0" } : {}),
+  }),
+};
+
+function collectAddonDeps(addons: string[], sentry: boolean): Record<string, string> {
+  return addons.reduce<Record<string, string>>((deps, addon) => {
+    const resolve = ADDON_DEPENDENCIES[addon];
+    return resolve ? { ...deps, ...resolve(sentry) } : deps;
+  }, {});
+}
+
+async function mergePackageDeps(pkgPath: string, extraDeps: Record<string, string>): Promise<void> {
+  if (Object.keys(extraDeps).length === 0) return;
+  const pkg = (await fs.readJson(pkgPath)) as { dependencies: Record<string, string> };
+  pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
+  await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+}
+
+const SENTRY_REQUIRES_OBSERVABILITY_MSG =
+  "--sentry requires the observability addon (Sentry ships as part of it)";
 
 export class NodePlugin extends BasePlugin {
   readonly name = nodeConfig.name;
@@ -110,75 +151,41 @@ export class NodePlugin extends BasePlugin {
     ];
   }
 
-  async applyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
-    await super.applyAddon(projectPath, addon, options);
+  protected async beforeGenerate(_projectName: string, options: GenerateOptions): Promise<void> {
+    assertAddonRequires(options.sentry, !!options.observability, SENTRY_REQUIRES_OBSERVABILITY_MSG);
+  }
+
+  protected async afterGenerate(outputPath: string, options: GenerateOptions): Promise<void> {
+    if (options.dryRun) return;
+
+    const pkgPath = path.join(outputPath, "package.json");
+    const selectedAddons = [
+      options.websocket && "websocket",
+      options.oauth && "oauth",
+      options.apiDocs && "api-docs",
+      options.email && "email",
+      options.s3 && "s3",
+      options.queue && "queue",
+      options.observability && "observability",
+    ].filter((addon): addon is string => !!addon);
+
+    const extraDeps = collectAddonDeps(selectedAddons, !!options.sentry);
+    await mergePackageDeps(pkgPath, extraDeps);
+  }
+
+  protected async beforeApplyAddon(_projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+    assertAddonRequires(options.sentry, addon === "observability", SENTRY_REQUIRES_OBSERVABILITY_MSG);
+  }
+
+  protected async afterApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
     if (options.dryRun) return;
 
     const pkgPath = path.join(projectPath, "package.json");
-    const extraDeps: Record<string, string> = {};
-    if (addon === "websocket") extraDeps["socket.io"] = "^4.8.1";
-    if (addon === "oauth") {
-      extraDeps["@fastify/oauth2"] = "^8.1.0";
-      extraDeps["@fastify/cookie"] = "^11.0.2";
-    }
-    if (addon === "api-docs") extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
-    if (addon === "email") extraDeps["nodemailer"] = "^6.9.0";
-    if (addon === "s3") {
-      extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
-      extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
-    }
-    if (addon === "queue") extraDeps["bullmq"] = "^5.0.0";
-    if (addon === "observability") {
-      extraDeps["@opentelemetry/sdk-node"] = "^0.51.0";
-      extraDeps["@opentelemetry/auto-instrumentations-node"] = "^0.46.0";
-      extraDeps["@opentelemetry/exporter-trace-otlp-http"] = "^0.51.0";
-      extraDeps["prom-client"] = "^15.1.0";
-      if (options.sentry) extraDeps["@sentry/node"] = "^8.0.0";
-    }
-
+    const extraDeps = collectAddonDeps([addon], !!options.sentry);
     if (Object.keys(extraDeps).length === 0) return;
 
-    const pkg = await fs.readJson(pkgPath) as { dependencies: Record<string, string> };
-    pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
-    await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+    await mergePackageDeps(pkgPath, extraDeps);
     logger.info(`Updated package.json with deps: ${Object.keys(extraDeps).join(", ")}`);
-  }
-
-  async generate(projectName: string, options: GenerateOptions): Promise<void> {
-    await super.generate(projectName, options);
-
-    // Merge addon-specific deps into package.json after all overlays are applied
-    if (options.dryRun) return;
-
-    const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
-    const pkgPath = path.join(outputPath, "package.json");
-
-    const extraDeps: Record<string, string> = {};
-    if (options.websocket) extraDeps["socket.io"] = "^4.8.1";
-    if (options.oauth) {
-      extraDeps["@fastify/oauth2"] = "^8.1.0";
-      extraDeps["@fastify/cookie"] = "^11.0.2";
-    }
-    if (options.apiDocs) extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
-    if (options.email) extraDeps["nodemailer"] = "^6.9.0";
-    if (options.s3) {
-      extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
-      extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
-    }
-    if (options.queue) extraDeps["bullmq"] = "^5.0.0";
-    if (options.observability) {
-      extraDeps["@opentelemetry/sdk-node"] = "^0.51.0";
-      extraDeps["@opentelemetry/auto-instrumentations-node"] = "^0.46.0";
-      extraDeps["@opentelemetry/exporter-trace-otlp-http"] = "^0.51.0";
-      extraDeps["prom-client"] = "^15.1.0";
-      if (options.sentry) extraDeps["@sentry/node"] = "^8.0.0";
-    }
-
-    if (Object.keys(extraDeps).length === 0) return;
-
-    const pkg = await fs.readJson(pkgPath) as { dependencies: Record<string, string> };
-    pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
-    await fs.writeJson(pkgPath, pkg, { spaces: 2 });
   }
 
   protected async readProjectName(projectPath: string): Promise<string> {

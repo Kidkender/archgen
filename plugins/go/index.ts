@@ -1,7 +1,7 @@
 import path from "path";
 import { BasePlugin, AddonEntry } from "../../core/base-plugin";
 import { TemplateVariables } from "../../core/template-engine";
-import { AddAddonOptions, GenerateOptions, StackInfo } from "../../types";
+import { GenerateOptions, StackInfo } from "../../types";
 import { goConfig } from "./config";
 
 export class GoPlugin extends BasePlugin {
@@ -60,7 +60,7 @@ export class GoPlugin extends BasePlugin {
     ];
   }
 
-  async applyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+  protected async beforeApplyAddon(projectPath: string): Promise<void> {
     try {
       const goModContent = await this.fs.readFile(path.join(projectPath, "go.mod"));
       const match = goModContent.match(/^module\s+(\S+)/m);
@@ -68,7 +68,9 @@ export class GoPlugin extends BasePlugin {
     } catch {
       this._cachedModulePath = undefined;
     }
-    await super.applyAddon(projectPath, addon, options);
+  }
+
+  protected async afterApplyAddon(): Promise<void> {
     this._cachedModulePath = undefined;
   }
 
