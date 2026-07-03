@@ -8,7 +8,8 @@ export type ArchGenErrorCode =
   | "NO_ADDON_SUPPORT"
   | "ADDON_FAILED"
   | "ADDON_REQUIRES_MISSING"
-  | "OUTPUT_DIR_NOT_FOUND";
+  | "OUTPUT_DIR_NOT_FOUND"
+  | "VALIDATION_ERROR";
 
 export class ArchGenError extends Error {
   code: ArchGenErrorCode;

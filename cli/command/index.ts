@@ -5,10 +5,6 @@ import { logger } from "../../core/logger";
 import { promptMissingOptions } from "../prompts";
 import { findPresetFile, loadPreset, mergePreset } from "../../core/config-preset";
 
-const VALID_NODE_DATABASES = ["mysql", "postgresql"];
-const VALID_PYTHON_DATABASES = ["postgresql", "sqlite"];
-const VALID_GO_DATABASES = ["postgresql"];
-
 export const createCommand = new Command("create")
   .argument("<project-name>", "Name of the project")
   .option("-l, --language <lang>", "Language (node|python)")
@@ -53,22 +49,8 @@ export const createCommand = new Command("create")
       logger.debug(`Loaded preset from ${presetFile}`);
     }
 
-    // Database validation is deferred until after prompts resolve the language
+    // Database validation happens inside ArchGen.create() (Zod schema, language-aware)
     const finalOptions = await promptMissingOptions(projectName, options);
-
-    if (finalOptions.database) {
-      const lang = finalOptions.language;
-      const valid =
-        lang === "python" ? VALID_PYTHON_DATABASES :
-        lang === "go" ? VALID_GO_DATABASES :
-        VALID_NODE_DATABASES;
-      if (!valid.includes(finalOptions.database)) {
-        logger.error(
-          `Invalid database "${finalOptions.database}" for ${lang}. Must be one of: ${valid.join(", ")}`,
-        );
-        process.exit(1);
-      }
-    }
 
     const archgen = new ArchGen();
     try {

@@ -8,6 +8,7 @@ import { logger } from "./logger";
 import { createSpinner } from "./spinner";
 import { registry } from "./registry";
 import { getNameError } from "./validation";
+import { validateGenerateOptions } from "./schema";
 import { ArchGenError } from "./errors";
 
 export class ArchGen {
@@ -17,7 +18,8 @@ export class ArchGen {
     this.fs = new FileSystem();
   }
 
-  async create(projectName: string, options: GenerateOptions): Promise<void> {
+  async create(projectName: string, rawOptions: GenerateOptions): Promise<void> {
+    const options = validateGenerateOptions(rawOptions);
     const basePath = options.output ? path.resolve(options.output) : process.cwd();
 
     if (options.output && !this.fs.exists(basePath)) {

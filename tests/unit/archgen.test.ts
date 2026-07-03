@@ -113,6 +113,14 @@ describe("ArchGen.create", () => {
     );
   });
 
+  it("rejects invalid database for the given language before touching disk", async () => {
+    await expect(
+      archgen.create("my-app", { language: "node", database: "sqlite" }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(mockFs.exists).not.toHaveBeenCalled();
+    expect(mockGenerate).not.toHaveBeenCalled();
+  });
+
   it("rejects --output dir that does not exist", async () => {
     mockFs.exists.mockReturnValue(false);
     await expect(
