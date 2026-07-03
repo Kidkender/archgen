@@ -12,6 +12,7 @@ import routes from "./routes";
 import { errorHandler } from "./middleware/error.middleware";
 import prismaPlugin from "./plugins/prisma.plugin";
 import responsePlugin from "./plugins/response.plugin";
+// @addon-imports
 
 export async function buildApp() {
   const app = Fastify({
@@ -52,6 +53,7 @@ export async function buildApp() {
 
   await app.register(responsePlugin)
   await app.register(prismaPlugin)
+  // @addon-plugins
   await app.register(routes, { prefix: "/api/v1" })
 
   app.setErrorHandler(errorHandler)

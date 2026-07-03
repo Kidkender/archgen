@@ -47,6 +47,53 @@ async function mergePackageDeps(pkgPath: string, extraDeps: Record<string, strin
 const SENTRY_REQUIRES_OBSERVABILITY_MSG =
   "--sentry requires the observability addon (Sentry ships as part of it)";
 
+/**
+ * Single source of truth for addon → app.ts wiring (imports + plugin registration).
+ * Patched incrementally against the `// @addon-imports` / `// @addon-plugins` markers
+ * in the base template instead of each addon shipping its own full app.ts — two addons
+ * both overwriting the same file used to silently drop whichever ran first.
+ */
+const ADDON_APP_PATCH: Record<string, { imports: string; plugins: string }> = {
+  oauth: {
+    imports: [
+      `import cookie from "@fastify/cookie";`,
+      `import oauth2 from "@fastify/oauth2";`,
+      `import oauthRoutes from "./modules/oauth/oauth.routes";`,
+      `import { oauthEnv } from "./config/oauth";`,
+    ].join("\n"),
+    plugins: [
+      `  // @fastify/cookie is required by @fastify/oauth2 v8 for state cookie management`,
+      `  await app.register(cookie);`,
+      ``,
+      `  await app.register(oauth2, {`,
+      `    name: "googleOAuth2",`,
+      `    credentials: {`,
+      `      client: { id: oauthEnv.GOOGLE_CLIENT_ID, secret: oauthEnv.GOOGLE_CLIENT_SECRET },`,
+      `      auth: (oauth2 as any).GOOGLE_CONFIGURATION,`,
+      `    },`,
+      "    callbackUri: `${oauthEnv.APP_URL}/api/v1/oauth/google/callback`,",
+      `    scope: ["profile", "email"],`,
+      `  });`,
+      ``,
+      `  await app.register(oauth2, {`,
+      `    name: "githubOAuth2",`,
+      `    credentials: {`,
+      `      client: { id: oauthEnv.GITHUB_CLIENT_ID, secret: oauthEnv.GITHUB_CLIENT_SECRET },`,
+      `      auth: (oauth2 as any).GITHUB_CONFIGURATION,`,
+      `    },`,
+      "    callbackUri: `${oauthEnv.APP_URL}/api/v1/oauth/github/callback`,",
+      `    scope: ["user:email"],`,
+      `  });`,
+      ``,
+      `  await app.register(oauthRoutes, { prefix: "/api/v1/oauth" });`,
+    ].join("\n"),
+  },
+  "api-docs": {
+    imports: `import docsPlugin from "./plugins/docs.plugin";`,
+    plugins: `  await app.register(docsPlugin);`,
+  },
+};
+
 export class NodePlugin extends BasePlugin {
   readonly name = nodeConfig.name;
   readonly description = nodeConfig.description;
@@ -171,6 +218,31 @@ export class NodePlugin extends BasePlugin {
 
     const extraDeps = collectAddonDeps(selectedAddons, !!options.sentry);
     await mergePackageDeps(pkgPath, extraDeps);
+
+    const appPath = path.join(outputPath, "src", "app.ts");
+    for (const addon of selectedAddons) {
+      await this.patchAppFile(appPath, addon);
+    }
+  }
+
+  /**
+   * Incrementally splices an addon's imports/plugin-registration into app.ts against the
+   * `// @addon-imports` / `// @addon-plugins` markers, instead of overwriting the whole file.
+   * Markers are left in place so repeated `archgen add` calls keep working, and each patch is
+   * skipped if already applied (idempotent re-runs).
+   */
+  private async patchAppFile(appPath: string, addon: string): Promise<void> {
+    const patch = ADDON_APP_PATCH[addon];
+    if (!patch || !this.fs.exists(appPath)) return;
+
+    const content = await this.fs.readFile(appPath);
+    if (content.includes(patch.imports)) return;
+
+    const patched = content
+      .replace("// @addon-imports", `${patch.imports}\n// @addon-imports`)
+      .replace("  // @addon-plugins", `${patch.plugins}\n  // @addon-plugins`);
+
+    await this.fs.writeFile(appPath, patched);
   }
 
   protected async beforeApplyAddon(_projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
@@ -179,6 +251,8 @@ export class NodePlugin extends BasePlugin {
 
   protected async afterApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
     if (options.dryRun) return;
+
+    await this.patchAppFile(path.join(projectPath, "src", "app.ts"), addon);
 
     const pkgPath = path.join(projectPath, "package.json");
     const extraDeps = collectAddonDeps([addon], !!options.sentry);
