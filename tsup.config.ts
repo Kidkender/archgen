@@ -1,4 +1,4 @@
-import { copy } from "fs-extra";
+import { copy, remove } from "fs-extra";
 import { basename, dirname, join } from "path";
 import { defineConfig } from "tsup";
 import { fileURLToPath } from "url";
@@ -31,6 +31,11 @@ export default defineConfig({
   },
   onSuccess: async () => {
     const __dirname = dirname(fileURLToPath(import.meta.url));
+
+    // tsup's `clean` only tracks its own JS bundle outputs, not this manually-copied
+    // template tree — without wiping it first, files deleted/renamed in source since
+    // the last full rebuild silently linger in dist/ (and ship in published releases).
+    await remove(join(__dirname, "dist/plugins"));
 
     await copy(
       join(__dirname, "plugins/node/template"),

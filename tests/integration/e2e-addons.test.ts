@@ -84,6 +84,14 @@ describe("Step 1 — generate project with all new addons", () => {
     expect(fs.existsSync(path.join(PROJECT_DIR, "src", "plugins", "docs.plugin.ts"))).toBe(true);
   });
 
+  it("app.ts wires up both oauth and api-docs (regression: addons used to overwrite each other)", () => {
+    const appTs = fs.readFileSync(path.join(PROJECT_DIR, "src", "app.ts"), "utf-8");
+    expect(appTs).toContain("oauthRoutes");
+    expect(appTs).toContain("docsPlugin");
+    expect(appTs).toContain('await app.register(oauthRoutes, { prefix: "/api/v1/oauth" });');
+    expect(appTs).toContain("await app.register(docsPlugin);");
+  });
+
   it("package.json contains new addon dependencies", () => {
     const pkg = fs.readJsonSync(path.join(PROJECT_DIR, "package.json")) as {
       dependencies: Record<string, string>;

@@ -56,7 +56,25 @@ export abstract class BasePlugin implements Plugin {
     };
   }
 
+  /** Runs before any template files are processed. Throw here to abort generation (e.g. invalid option combos). */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected async beforeGenerate(projectName: string, options: GenerateOptions): Promise<void> {}
+
+  /** Runs once after generate() finishes writing files (or previewing them, on dry-run). */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected async afterGenerate(outputPath: string, options: GenerateOptions): Promise<void> {}
+
+  /** Runs before an addon's template files are processed. Throw here to abort (e.g. invalid option combos). */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected async beforeApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {}
+
+  /** Runs once after applyAddon() finishes writing files (or previewing them, on dry-run). */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected async afterApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {}
+
   async generate(projectName: string, options: GenerateOptions): Promise<void> {
+    await this.beforeGenerate(projectName, options);
+
     const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
     const templateBasePath = path.join(__dirname, this.relativeTemplateDir, "base");
     const addonsPath = path.join(__dirname, this.relativeTemplateDir, "addons");
@@ -82,14 +100,17 @@ export abstract class BasePlugin implements Plugin {
       logger.info(`Would create ${files.length} files in ./${projectName}:`);
       files.forEach((f) => console.log(`  ${f}`));
       console.log("");
-      return;
+    } else {
+      logger.success(`Project "${projectName}" generated successfully`);
+      this.showNextSteps(projectName, options);
     }
 
-    logger.success(`Project "${projectName}" generated successfully`);
-    this.showNextSteps(projectName, options);
+    await this.afterGenerate(outputPath, options);
   }
 
   async applyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+    await this.beforeApplyAddon(projectPath, addon, options);
+
     const dryRun = options.dryRun ?? false;
     const addonsPath = path.join(__dirname, this.relativeTemplateDir, "addons");
 
@@ -121,5 +142,7 @@ export abstract class BasePlugin implements Plugin {
     } else {
       logger.success(`Addon "${addon}" applied successfully.`);
     }
+
+    await this.afterApplyAddon(projectPath, addon, options);
   }
 }

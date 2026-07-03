@@ -4,7 +4,132 @@ import { TemplateVariables } from "../../core/template-engine";
 import { AddAddonOptions, GenerateOptions, StackInfo } from "../../types";
 import { nodeConfig } from "./config";
 import { logger } from "../../core/logger";
+import { assertAddonRequires } from "../../core/addon-requires";
 import fs from "fs-extra";
+
+/** Single source of truth for addon → npm dependency mapping, shared by generate() and applyAddon(). */
+const ADDON_DEPENDENCIES: Record<string, (sentry: boolean) => Record<string, string>> = {
+  websocket: () => ({ "socket.io": "^4.8.1" }),
+  oauth: () => ({
+    "@fastify/oauth2": "^8.1.0",
+    "@fastify/cookie": "^11.0.2",
+  }),
+  "api-docs": () => ({ "@scalar/fastify-api-reference": "^1.25.0" }),
+  email: () => ({ nodemailer: "^6.9.0" }),
+  s3: () => ({
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0",
+  }),
+  queue: () => ({ bullmq: "^5.0.0" }),
+  observability: (sentry) => ({
+    "@opentelemetry/sdk-node": "^0.51.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.46.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0",
+    "prom-client": "^15.1.0",
+    ...(sentry ? { "@sentry/node": "^8.0.0" } : {}),
+  }),
+};
+
+function collectAddonDeps(addons: string[], sentry: boolean): Record<string, string> {
+  return addons.reduce<Record<string, string>>((deps, addon) => {
+    const resolve = ADDON_DEPENDENCIES[addon];
+    return resolve ? { ...deps, ...resolve(sentry) } : deps;
+  }, {});
+}
+
+async function mergePackageDeps(pkgPath: string, extraDeps: Record<string, string>): Promise<void> {
+  if (Object.keys(extraDeps).length === 0) return;
+  const pkg = (await fs.readJson(pkgPath)) as { dependencies: Record<string, string> };
+  pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
+  await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+}
+
+const SENTRY_REQUIRES_OBSERVABILITY_MSG =
+  "--sentry requires the observability addon (Sentry ships as part of it)";
+
+/**
+ * Single source of truth for addon → app.ts wiring (imports + plugin registration).
+ * Patched incrementally against the `// @addon-imports` / `// @addon-plugins` markers
+ * in the base template instead of each addon shipping its own full app.ts — two addons
+ * both overwriting the same file used to silently drop whichever ran first.
+ */
+const ADDON_APP_PATCH: Record<string, { imports: string; plugins: string }> = {
+  oauth: {
+    imports: [
+      `import cookie from "@fastify/cookie";`,
+      `import oauth2 from "@fastify/oauth2";`,
+      `import oauthRoutes from "./modules/oauth/oauth.routes";`,
+      `import { oauthEnv } from "./config/oauth";`,
+    ].join("\n"),
+    plugins: [
+      `  // @fastify/cookie is required by @fastify/oauth2 v8 for state cookie management`,
+      `  await app.register(cookie);`,
+      ``,
+      `  await app.register(oauth2, {`,
+      `    name: "googleOAuth2",`,
+      `    credentials: {`,
+      `      client: { id: oauthEnv.GOOGLE_CLIENT_ID, secret: oauthEnv.GOOGLE_CLIENT_SECRET },`,
+      `      auth: (oauth2 as any).GOOGLE_CONFIGURATION,`,
+      `    },`,
+      "    callbackUri: `${oauthEnv.APP_URL}/api/v1/oauth/google/callback`,",
+      `    scope: ["profile", "email"],`,
+      `  });`,
+      ``,
+      `  await app.register(oauth2, {`,
+      `    name: "githubOAuth2",`,
+      `    credentials: {`,
+      `      client: { id: oauthEnv.GITHUB_CLIENT_ID, secret: oauthEnv.GITHUB_CLIENT_SECRET },`,
+      `      auth: (oauth2 as any).GITHUB_CONFIGURATION,`,
+      `    },`,
+      "    callbackUri: `${oauthEnv.APP_URL}/api/v1/oauth/github/callback`,",
+      `    scope: ["user:email"],`,
+      `  });`,
+      ``,
+      `  await app.register(oauthRoutes, { prefix: "/api/v1/oauth" });`,
+    ].join("\n"),
+  },
+  "api-docs": {
+    imports: `import docsPlugin from "./plugins/docs.plugin";`,
+    plugins: `  await app.register(docsPlugin);`,
+  },
+};
+
+/**
+ * Single source of truth for addon → .env.example additions. Same overwrite-conflict class as
+ * ADDON_APP_PATCH above: database/postgresql, oauth, email and s3 each used to ship a full
+ * .env.example, so combining any two silently dropped whichever ran first. Patched incrementally
+ * against the `# @addon-env` marker instead.
+ */
+const ADDON_ENV_PATCH: Record<string, string> = {
+  oauth: [
+    `APP_URL=http://localhost:3000`,
+    ``,
+    `# Google OAuth — https://console.cloud.google.com/`,
+    `GOOGLE_CLIENT_ID=your-google-client-id`,
+    `GOOGLE_CLIENT_SECRET=your-google-client-secret`,
+    ``,
+    `# GitHub OAuth — https://github.com/settings/developers`,
+    `GITHUB_CLIENT_ID=your-github-client-id`,
+    `GITHUB_CLIENT_SECRET=your-github-client-secret`,
+  ].join("\n"),
+  email: [
+    `# Email (SMTP)`,
+    `MAIL_HOST=smtp.gmail.com`,
+    `MAIL_PORT=587`,
+    `MAIL_USERNAME=your-email@gmail.com`,
+    `MAIL_PASSWORD=your-app-password`,
+    `MAIL_FROM_ADDRESS=your-email@gmail.com`,
+    `MAIL_FROM_NAME={{PROJECT_NAME}}`,
+  ].join("\n"),
+  s3: [
+    `# Storage (AWS S3 / Cloudflare R2 / MinIO)`,
+    `S3_BUCKET=your-bucket-name`,
+    `S3_REGION=us-east-1`,
+    `# S3_ENDPOINT=https://your-r2-endpoint.r2.cloudflarestorage.com  # Leave empty for AWS S3`,
+    `AWS_ACCESS_KEY_ID=your-access-key-id`,
+    `AWS_SECRET_ACCESS_KEY=your-secret-access-key`,
+  ].join("\n"),
+};
 
 export class NodePlugin extends BasePlugin {
   readonly name = nodeConfig.name;
@@ -110,75 +235,97 @@ export class NodePlugin extends BasePlugin {
     ];
   }
 
-  async applyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
-    await super.applyAddon(projectPath, addon, options);
-    if (options.dryRun) return;
-
-    const pkgPath = path.join(projectPath, "package.json");
-    const extraDeps: Record<string, string> = {};
-    if (addon === "websocket") extraDeps["socket.io"] = "^4.8.1";
-    if (addon === "oauth") {
-      extraDeps["@fastify/oauth2"] = "^8.1.0";
-      extraDeps["@fastify/cookie"] = "^11.0.2";
-    }
-    if (addon === "api-docs") extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
-    if (addon === "email") extraDeps["nodemailer"] = "^6.9.0";
-    if (addon === "s3") {
-      extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
-      extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
-    }
-    if (addon === "queue") extraDeps["bullmq"] = "^5.0.0";
-    if (addon === "observability") {
-      extraDeps["@opentelemetry/sdk-node"] = "^0.51.0";
-      extraDeps["@opentelemetry/auto-instrumentations-node"] = "^0.46.0";
-      extraDeps["@opentelemetry/exporter-trace-otlp-http"] = "^0.51.0";
-      extraDeps["prom-client"] = "^15.1.0";
-      if (options.sentry) extraDeps["@sentry/node"] = "^8.0.0";
-    }
-
-    if (Object.keys(extraDeps).length === 0) return;
-
-    const pkg = await fs.readJson(pkgPath) as { dependencies: Record<string, string> };
-    pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
-    await fs.writeJson(pkgPath, pkg, { spaces: 2 });
-    logger.info(`Updated package.json with deps: ${Object.keys(extraDeps).join(", ")}`);
+  protected async beforeGenerate(_projectName: string, options: GenerateOptions): Promise<void> {
+    assertAddonRequires(options.sentry, !!options.observability, SENTRY_REQUIRES_OBSERVABILITY_MSG);
   }
 
-  async generate(projectName: string, options: GenerateOptions): Promise<void> {
-    await super.generate(projectName, options);
-
-    // Merge addon-specific deps into package.json after all overlays are applied
+  protected async afterGenerate(outputPath: string, options: GenerateOptions): Promise<void> {
     if (options.dryRun) return;
 
-    const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
     const pkgPath = path.join(outputPath, "package.json");
+    const selectedAddons = [
+      options.websocket && "websocket",
+      options.oauth && "oauth",
+      options.apiDocs && "api-docs",
+      options.email && "email",
+      options.s3 && "s3",
+      options.queue && "queue",
+      options.observability && "observability",
+    ].filter((addon): addon is string => !!addon);
 
-    const extraDeps: Record<string, string> = {};
-    if (options.websocket) extraDeps["socket.io"] = "^4.8.1";
-    if (options.oauth) {
-      extraDeps["@fastify/oauth2"] = "^8.1.0";
-      extraDeps["@fastify/cookie"] = "^11.0.2";
-    }
-    if (options.apiDocs) extraDeps["@scalar/fastify-api-reference"] = "^1.25.0";
-    if (options.email) extraDeps["nodemailer"] = "^6.9.0";
-    if (options.s3) {
-      extraDeps["@aws-sdk/client-s3"] = "^3.600.0";
-      extraDeps["@aws-sdk/s3-request-presigner"] = "^3.600.0";
-    }
-    if (options.queue) extraDeps["bullmq"] = "^5.0.0";
-    if (options.observability) {
-      extraDeps["@opentelemetry/sdk-node"] = "^0.51.0";
-      extraDeps["@opentelemetry/auto-instrumentations-node"] = "^0.46.0";
-      extraDeps["@opentelemetry/exporter-trace-otlp-http"] = "^0.51.0";
-      extraDeps["prom-client"] = "^15.1.0";
-      if (options.sentry) extraDeps["@sentry/node"] = "^8.0.0";
-    }
+    const extraDeps = collectAddonDeps(selectedAddons, !!options.sentry);
+    await mergePackageDeps(pkgPath, extraDeps);
 
+    const appPath = path.join(outputPath, "src", "app.ts");
+    const envPath = path.join(outputPath, ".env.example");
+    const variables = this.getVariables(path.basename(outputPath), options);
+    for (const addon of selectedAddons) {
+      await this.patchAppFile(appPath, addon);
+      await this.patchEnvExample(envPath, addon, variables);
+    }
+  }
+
+  /**
+   * Incrementally splices an addon's imports/plugin-registration into app.ts against the
+   * `// @addon-imports` / `// @addon-plugins` markers, instead of overwriting the whole file.
+   * Markers are left in place so repeated `archgen add` calls keep working, and each patch is
+   * skipped if already applied (idempotent re-runs).
+   */
+  private async patchAppFile(appPath: string, addon: string): Promise<void> {
+    const patch = ADDON_APP_PATCH[addon];
+    if (!patch || !this.fs.exists(appPath)) return;
+
+    const content = await this.fs.readFile(appPath);
+    if (content.includes(patch.imports)) return;
+
+    const patched = content
+      .replace("// @addon-imports", `${patch.imports}\n// @addon-imports`)
+      .replace("  // @addon-plugins", `${patch.plugins}\n  // @addon-plugins`);
+
+    await this.fs.writeFile(appPath, patched);
+  }
+
+  /**
+   * Same incremental-splice approach as patchAppFile, applied to .env.example's `# @addon-env`
+   * marker. Runs the patch through TemplateEngine first since splicing happens after the file's
+   * own {{VAR}} substitution already ran (e.g. email's MAIL_FROM_NAME={{PROJECT_NAME}}).
+   */
+  private async patchEnvExample(envPath: string, addon: string, variables: TemplateVariables): Promise<void> {
+    const rawPatch = ADDON_ENV_PATCH[addon];
+    if (!rawPatch || !this.fs.exists(envPath)) return;
+
+    const patch = Object.entries(variables).reduce(
+      (text, [key, value]) => text.split(`{{${key}}}`).join(value ?? ""),
+      rawPatch,
+    );
+    const content = await this.fs.readFile(envPath);
+    if (content.includes(patch)) return;
+
+    const patched = content.replace("# @addon-env", `${patch}\n# @addon-env`);
+    await this.fs.writeFile(envPath, patched);
+  }
+
+  protected async beforeApplyAddon(_projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+    assertAddonRequires(options.sentry, addon === "observability", SENTRY_REQUIRES_OBSERVABILITY_MSG);
+  }
+
+  protected async afterApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+    if (options.dryRun) return;
+
+    const projectName = path.basename(projectPath);
+    await this.patchAppFile(path.join(projectPath, "src", "app.ts"), addon);
+    await this.patchEnvExample(
+      path.join(projectPath, ".env.example"),
+      addon,
+      this.buildApplyAddonVariables(projectName),
+    );
+
+    const pkgPath = path.join(projectPath, "package.json");
+    const extraDeps = collectAddonDeps([addon], !!options.sentry);
     if (Object.keys(extraDeps).length === 0) return;
 
-    const pkg = await fs.readJson(pkgPath) as { dependencies: Record<string, string> };
-    pkg.dependencies = { ...pkg.dependencies, ...extraDeps };
-    await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+    await mergePackageDeps(pkgPath, extraDeps);
+    logger.info(`Updated package.json with deps: ${Object.keys(extraDeps).join(", ")}`);
   }
 
   protected async readProjectName(projectPath: string): Promise<string> {

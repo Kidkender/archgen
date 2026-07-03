@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import path from "path";
+import { logger } from "./logger";
 
 export interface ArchGenPreset {
   language?: string;
@@ -37,7 +38,8 @@ export function findPresetFile(startDir: string = process.cwd()): string | null 
 export function loadPreset(filePath: string): ArchGenPreset {
   try {
     return fs.readJsonSync(filePath) as ArchGenPreset;
-  } catch {
+  } catch (error) {
+    logger.warn(`Ignoring ${filePath}: ${(error as Error).message}`);
     return {};
   }
 }

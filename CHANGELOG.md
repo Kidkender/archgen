@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.0] - 2026-07-03
+
+### Added
+- **Config schema validation** — `GenerateOptions` is now validated with Zod (`core/schema.ts`) before any file is touched, including a language-aware database check (e.g. `--database sqlite` now fails fast for `--language node` instead of erroring deep inside a plugin)
+- **Plugin lifecycle hooks** — `BasePlugin` gained `beforeGenerate`/`afterGenerate`/`beforeApplyAddon`/`afterApplyAddon` hooks; Node/Python plugins no longer override the monolithic `generate()`/`applyAddon()` methods directly
+
+### Fixed
+- **Node: `--oauth` + `--api-docs` silently dropped one addon's wiring** — both addons shipped a full `src/app.ts` overwrite, so combining them (or `archgen add`-ing one after the other) meant whichever ran last won and the other's Fastify plugin registration vanished, with its module files left orphaned on disk. Replaced with incremental patching against `// @addon-imports` / `// @addon-plugins` markers.
+- **Node: `--database postgresql` + `--oauth`/`--email`/`--s3` silently dropped `.env.example` vars** — same overwrite-conflict pattern, now patched incrementally against a `# @addon-env` marker. Also fixes `MAIL_FROM_NAME={{PROJECT_NAME}}` shipping unsubstituted when spliced in after the addon's variable-substitution pass.
+- **`archgen add`/`create` with a malformed `.archgenrc.json`** no longer silently ignores the preset — now warns with the file path and parse error before falling back to defaults
+- **Python: `add observability --sentry` didn't inject `sentry-sdk`** — dependency map was duplicated and had drifted between `generate()` and `applyAddon()`; consolidated into one source of truth for both Node and Python
+- **Build: stale template files could leak into `dist/`** — `tsup.config.ts`'s template-copy step never cleaned `dist/plugins` before re-copying, so deleted/renamed template source files silently lingered across builds (including published releases via `prepublishOnly`)
+
 ## [1.3.1] - 2026-06-16
 
 ### Security

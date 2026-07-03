@@ -5,6 +5,29 @@ import { TemplateVariables } from "../../core/template-engine";
 import { AddAddonOptions, GenerateOptions, StackInfo } from "../../types";
 import { pythonConfig } from "./config";
 import { logger } from "../../core/logger";
+import { assertAddonRequires } from "../../core/addon-requires";
+
+const SENTRY_REQUIRES_OBSERVABILITY_MSG =
+  "--sentry requires the observability addon (Sentry ships as part of it)";
+
+/** Single source of truth for addon → pyproject.toml dependency mapping, shared by generate() and applyAddon(). */
+const ADDON_DEPENDENCIES: Record<string, (sentry: boolean) => { deps: string[]; devDeps: string[] }> = {
+  s3: () => ({ deps: ["boto3>=1.35.0"], devDeps: [] }),
+  queue: () => ({ deps: ["arq>=0.26.0"], devDeps: [] }),
+  testing: () => ({ deps: [], devDeps: ["aiosqlite>=0.20.0"] }),
+  "pre-commit": () => ({ deps: [], devDeps: ["pre-commit>=3.7.0"] }),
+  observability: (sentry) => ({
+    deps: [
+      "opentelemetry-sdk>=1.24.0",
+      "opentelemetry-instrumentation-fastapi>=0.45b0",
+      "opentelemetry-exporter-otlp-proto-http>=1.24.0",
+      "prometheus-fastapi-instrumentator>=7.0.0",
+      "structlog>=24.1.0",
+      ...(sentry ? ["sentry-sdk[fastapi]>=2.0.0"] : []),
+    ],
+    devDeps: [],
+  }),
+};
 
 export class PythonPlugin extends BasePlugin {
   readonly name = pythonConfig.name;
@@ -110,66 +133,50 @@ export class PythonPlugin extends BasePlugin {
     ];
   }
 
-  async applyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
-    await super.applyAddon(projectPath, addon, options);
+  protected async beforeGenerate(_projectName: string, options: GenerateOptions): Promise<void> {
+    assertAddonRequires(options.sentry, !!options.observability, SENTRY_REQUIRES_OBSERVABILITY_MSG);
+  }
+
+  protected async afterGenerate(outputPath: string, options: GenerateOptions): Promise<void> {
+    if (options.dryRun) return;
+
+    const pyprojectPath = path.join(outputPath, "pyproject.toml");
+    const selectedAddons = [
+      options.s3 && "s3",
+      options.queue && "queue",
+      options.testing && "testing",
+      options.preCommit && "pre-commit",
+      options.observability && "observability",
+    ].filter((addon): addon is string => !!addon);
+
+    await this._applyAddonDependencies(pyprojectPath, selectedAddons, !!options.sentry);
+  }
+
+  protected async beforeApplyAddon(_projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
+    assertAddonRequires(options.sentry, addon === "observability", SENTRY_REQUIRES_OBSERVABILITY_MSG);
+  }
+
+  protected async afterApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
     if (options.dryRun) return;
 
     const pyprojectPath = path.join(projectPath, "pyproject.toml");
-    if (addon === "s3") {
-      await this._injectPyprojectDep(pyprojectPath, "boto3>=1.35.0");
-      logger.info("Updated pyproject.toml with boto3");
-    }
-    if (addon === "queue") {
-      await this._injectPyprojectDep(pyprojectPath, "arq>=0.26.0");
-      logger.info("Updated pyproject.toml with arq");
-    }
-    if (addon === "testing") {
-      await this._injectPyprojectDevDeps(pyprojectPath, ["aiosqlite>=0.20.0"]);
-      logger.info("Updated pyproject.toml with aiosqlite");
-    }
-    if (addon === "pre-commit") {
-      await this._injectPyprojectDevDeps(pyprojectPath, ["pre-commit>=3.7.0"]);
-      logger.info("Updated pyproject.toml with pre-commit");
-    }
-    if (addon === "observability") {
-      await this._injectPyprojectDeps(pyprojectPath, [
-        "opentelemetry-sdk>=1.24.0",
-        "opentelemetry-instrumentation-fastapi>=0.45b0",
-        "opentelemetry-exporter-otlp-proto-http>=1.24.0",
-        "prometheus-fastapi-instrumentator>=7.0.0",
-        "structlog>=24.1.0",
-      ]);
-      logger.info("Updated pyproject.toml with observability deps");
-    }
+    await this._applyAddonDependencies(pyprojectPath, [addon], !!options.sentry);
   }
 
-  async generate(projectName: string, options: GenerateOptions): Promise<void> {
-    await super.generate(projectName, options);
-    if (options.dryRun) return;
-
-    const outputPath = options.outputDir ?? path.join(process.cwd(), projectName);
-    const pyprojectPath = path.join(outputPath, "pyproject.toml");
-
-    if (options.s3) await this._injectPyprojectDep(pyprojectPath, "boto3>=1.35.0");
-    if (options.queue) await this._injectPyprojectDep(pyprojectPath, "arq>=0.26.0");
-    if (options.testing) await this._injectPyprojectDevDeps(pyprojectPath, ["aiosqlite>=0.20.0"]);
-    if (options.preCommit) await this._injectPyprojectDevDeps(pyprojectPath, ["pre-commit>=3.7.0"]);
-    if (options.observability) {
-      await this._injectPyprojectDeps(pyprojectPath, [
-        "opentelemetry-sdk>=1.24.0",
-        "opentelemetry-instrumentation-fastapi>=0.45b0",
-        "opentelemetry-exporter-otlp-proto-http>=1.24.0",
-        "prometheus-fastapi-instrumentator>=7.0.0",
-        "structlog>=24.1.0",
-      ]);
-      if (options.sentry) {
-        await this._injectPyprojectDeps(pyprojectPath, ["sentry-sdk[fastapi]>=2.0.0"]);
+  private async _applyAddonDependencies(pyprojectPath: string, addons: string[], sentry: boolean): Promise<void> {
+    for (const addon of addons) {
+      const resolve = ADDON_DEPENDENCIES[addon];
+      if (!resolve) continue;
+      const { deps, devDeps } = resolve(sentry);
+      if (deps.length > 0) {
+        await this._injectPyprojectDeps(pyprojectPath, deps);
+        logger.info(`Updated pyproject.toml with ${addon} deps`);
+      }
+      if (devDeps.length > 0) {
+        await this._injectPyprojectDevDeps(pyprojectPath, devDeps);
+        logger.info(`Updated pyproject.toml with ${addon} dev deps`);
       }
     }
-  }
-
-  private async _injectPyprojectDep(pyprojectPath: string, dep: string): Promise<void> {
-    return this._injectPyprojectDeps(pyprojectPath, [dep]);
   }
 
   private async _injectPyprojectDeps(pyprojectPath: string, deps: string[]): Promise<void> {
