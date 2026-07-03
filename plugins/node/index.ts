@@ -94,6 +94,43 @@ const ADDON_APP_PATCH: Record<string, { imports: string; plugins: string }> = {
   },
 };
 
+/**
+ * Single source of truth for addon → .env.example additions. Same overwrite-conflict class as
+ * ADDON_APP_PATCH above: database/postgresql, oauth, email and s3 each used to ship a full
+ * .env.example, so combining any two silently dropped whichever ran first. Patched incrementally
+ * against the `# @addon-env` marker instead.
+ */
+const ADDON_ENV_PATCH: Record<string, string> = {
+  oauth: [
+    `APP_URL=http://localhost:3000`,
+    ``,
+    `# Google OAuth — https://console.cloud.google.com/`,
+    `GOOGLE_CLIENT_ID=your-google-client-id`,
+    `GOOGLE_CLIENT_SECRET=your-google-client-secret`,
+    ``,
+    `# GitHub OAuth — https://github.com/settings/developers`,
+    `GITHUB_CLIENT_ID=your-github-client-id`,
+    `GITHUB_CLIENT_SECRET=your-github-client-secret`,
+  ].join("\n"),
+  email: [
+    `# Email (SMTP)`,
+    `MAIL_HOST=smtp.gmail.com`,
+    `MAIL_PORT=587`,
+    `MAIL_USERNAME=your-email@gmail.com`,
+    `MAIL_PASSWORD=your-app-password`,
+    `MAIL_FROM_ADDRESS=your-email@gmail.com`,
+    `MAIL_FROM_NAME={{PROJECT_NAME}}`,
+  ].join("\n"),
+  s3: [
+    `# Storage (AWS S3 / Cloudflare R2 / MinIO)`,
+    `S3_BUCKET=your-bucket-name`,
+    `S3_REGION=us-east-1`,
+    `# S3_ENDPOINT=https://your-r2-endpoint.r2.cloudflarestorage.com  # Leave empty for AWS S3`,
+    `AWS_ACCESS_KEY_ID=your-access-key-id`,
+    `AWS_SECRET_ACCESS_KEY=your-secret-access-key`,
+  ].join("\n"),
+};
+
 export class NodePlugin extends BasePlugin {
   readonly name = nodeConfig.name;
   readonly description = nodeConfig.description;
@@ -220,8 +257,11 @@ export class NodePlugin extends BasePlugin {
     await mergePackageDeps(pkgPath, extraDeps);
 
     const appPath = path.join(outputPath, "src", "app.ts");
+    const envPath = path.join(outputPath, ".env.example");
+    const variables = this.getVariables(path.basename(outputPath), options);
     for (const addon of selectedAddons) {
       await this.patchAppFile(appPath, addon);
+      await this.patchEnvExample(envPath, addon, variables);
     }
   }
 
@@ -245,6 +285,26 @@ export class NodePlugin extends BasePlugin {
     await this.fs.writeFile(appPath, patched);
   }
 
+  /**
+   * Same incremental-splice approach as patchAppFile, applied to .env.example's `# @addon-env`
+   * marker. Runs the patch through TemplateEngine first since splicing happens after the file's
+   * own {{VAR}} substitution already ran (e.g. email's MAIL_FROM_NAME={{PROJECT_NAME}}).
+   */
+  private async patchEnvExample(envPath: string, addon: string, variables: TemplateVariables): Promise<void> {
+    const rawPatch = ADDON_ENV_PATCH[addon];
+    if (!rawPatch || !this.fs.exists(envPath)) return;
+
+    const patch = Object.entries(variables).reduce(
+      (text, [key, value]) => text.split(`{{${key}}}`).join(value ?? ""),
+      rawPatch,
+    );
+    const content = await this.fs.readFile(envPath);
+    if (content.includes(patch)) return;
+
+    const patched = content.replace("# @addon-env", `${patch}\n# @addon-env`);
+    await this.fs.writeFile(envPath, patched);
+  }
+
   protected async beforeApplyAddon(_projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
     assertAddonRequires(options.sentry, addon === "observability", SENTRY_REQUIRES_OBSERVABILITY_MSG);
   }
@@ -252,7 +312,13 @@ export class NodePlugin extends BasePlugin {
   protected async afterApplyAddon(projectPath: string, addon: string, options: AddAddonOptions): Promise<void> {
     if (options.dryRun) return;
 
+    const projectName = path.basename(projectPath);
     await this.patchAppFile(path.join(projectPath, "src", "app.ts"), addon);
+    await this.patchEnvExample(
+      path.join(projectPath, ".env.example"),
+      addon,
+      this.buildApplyAddonVariables(projectName),
+    );
 
     const pkgPath = path.join(projectPath, "package.json");
     const extraDeps = collectAddonDeps([addon], !!options.sentry);

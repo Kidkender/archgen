@@ -170,6 +170,20 @@ describe("CLI: archgen create Node -- api-docs addon", () => {
   });
 });
 
+describe("CLI: archgen create Node -- oauth + email + s3 + postgresql together", () => {
+  it(".env.example contains all four addons' vars without dropping any (regression)", async () => {
+    await fs.ensureDir(tmpDir);
+    run("create my-app --language node --database postgresql --oauth --email --s3 --skip-git");
+    const projectDir = path.join(tmpDir, "my-app");
+    const env = fs.readFileSync(path.join(projectDir, ".env.example"), "utf-8");
+    expect(env).toContain("DATABASE_URL=postgresql://");
+    expect(env).toContain("GOOGLE_CLIENT_ID");
+    expect(env).toContain("MAIL_HOST");
+    expect(env).toContain("S3_BUCKET");
+    expect(env).toContain("MAIL_FROM_NAME=my-app");
+  });
+});
+
 describe("CLI: archgen add", () => {
   it("adds ci addon to existing node project", async () => {
     await fs.ensureDir(tmpDir);
