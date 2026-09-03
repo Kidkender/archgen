@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"gorm.io/gorm"
+	// @addon-imports
 )
 
 func New(cfg *config.Config, db *gorm.DB) *chi.Mux {
@@ -33,6 +34,8 @@ func New(cfg *config.Config, db *gorm.DB) *chi.Mux {
 			r.Get("/users/{id}", h.GetUser)
 		})
 	})
+
+	// @addon-routes
 
 	return r
 }

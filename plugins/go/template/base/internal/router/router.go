@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"gorm.io/gorm"
+	// @addon-imports
 )
 
 func New(cfg *config.Config, db *gorm.DB) *chi.Mux {
@@ -18,6 +19,8 @@ func New(cfg *config.Config, db *gorm.DB) *chi.Mux {
 	h := handlers.New(db)
 
 	r.Get("/health", h.Health)
+
+	// @addon-routes
 
 	return r
 }

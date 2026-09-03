@@ -1,0 +1,8 @@
+{
+  "title": "{{PROJECT_NAME}} — Overview",
+  "panels": [
+    { "title": "Request rate", "type": "graph", "targets": [{ "expr": "rate(promhttp_metric_handler_requests_total[5m])" }] },
+    { "title": "Active handles", "type": "graph", "targets": [{ "expr": "go_goroutines" }] }
+  ],
+  "schemaVersion": 39
+}

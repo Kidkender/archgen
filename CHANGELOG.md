@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+- **Go addon parity with Node/Python** — Go now supports the same optional addon set: `--websocket` (gorilla/websocket + JWT), `--oauth` (golang.org/x/oauth2, Google + GitHub, auto-mounted at `/api/v1/oauth`), `--api-docs` (Swagger UI at `/docs` + OpenAPI JSON, auto-mounted), `--email` (stdlib `net/smtp`, no extra dependency), `--s3` (aws-sdk-go-v2, upload/presign/delete/exists, R2/MinIO via `S3_ENDPOINT`), `--queue` (asynq + Redis, including a `cmd/worker` binary), `--observability` (OpenTelemetry OTLP/HTTP tracing + Prometheus `/metrics`, plus the same `observability/` Docker Compose + Grafana dashboard stack as Node/Python), and `--sentry` (paired with `--observability`)
+- **Composable Go addon wiring** — `internal/router/router.go`, `internal/config/config.go`, `go.mod`, `.env.example`, and `cmd/server/main.go` now carry `// @addon-*` splice markers so multiple Go addons (plus `jwt`) can be combined without one overwriting another's changes — the same class of bug fixed for Node in 1.4.0, addressed here before it could ship. `api-docs` and `oauth` auto-wire into `router.go` (matching what Node auto-wires into `app.ts`); the rest ship as standalone packages with next-steps instructions, mirroring Node/Python's existing split
+- Patched `router.go` is passed through `gofmt` when available (best-effort; silently skipped if the `go` toolchain isn't installed) so the marker-spliced imports/routes read cleanly
+
+### Fixed
+- **Go: Sentry no longer forces a dependency on plain `--observability` projects** — `internal/sentryinit` hard-imports `github.com/getsentry/sentry-go`, so it now ships as its own conditional addon (only alongside `--sentry`) instead of being bundled unconditionally into `--observability`; previously `go mod tidy` would add the Sentry dependency to `go.mod` even when `--sentry` was never passed, which would break `-mod=readonly` CI builds
+
 ## [1.4.0] - 2026-07-03
 
 ### Added

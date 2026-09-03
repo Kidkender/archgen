@@ -25,11 +25,12 @@ Answer a few prompts. Your project is ready in under a second.
 - Optional Docker + docker-compose setup
 - Optional testing setup with example test files
 - Optional GitHub Actions CI workflow
-- Optional WebSocket support with Socket.io + JWT auth
-- Optional OAuth2 (Google + GitHub) via `@fastify/oauth2`
-- Optional API documentation via Scalar + Swagger UI
-- Optional Email support via SMTP (nodemailer) — send welcome, password reset, and custom emails
-- Optional S3 storage (AWS S3 / R2 / MinIO) — upload, presigned URLs, delete, exists
+- Optional WebSocket support (Socket.io + JWT for Node/Python, gorilla/websocket + JWT for Go)
+- Optional OAuth2 (Google + GitHub) — `@fastify/oauth2` (Node), native (Python), `golang.org/x/oauth2` (Go)
+- Optional API documentation — Scalar + Swagger UI (Node/Python), Swagger UI (Go)
+- Optional Email support via SMTP — nodemailer (Node), smtplib (Python), stdlib `net/smtp` (Go)
+- Optional S3 storage (AWS S3 / R2 / MinIO) — upload, presigned URLs, delete, exists (all three languages)
+- Optional background queue — BullMQ (Node), arq (Python), asynq + Redis (Go)
 - Optional Claude Code setup — `CLAUDE.md` + pre-configured skills for Claude Code agent
 - Optional Cursor setup — `.cursor/skills/` with pre-configured skills for Cursor agent
 - Optional observability stack — OpenTelemetry traces + Prometheus `/metrics` + Grafana dashboard + OTel Collector (both Node.js and Python)
@@ -48,7 +49,7 @@ Answer a few prompts. Your project is ready in under a second.
 |----------|-------|
 | Node.js  | TypeScript · Fastify · Prisma · MariaDB/MySQL · Redis · JWT · Zod · Pino · Swagger |
 | Python   | FastAPI · SQLAlchemy 2.0 · Alembic · PostgreSQL · Redis · Pydantic v2 · APScheduler |
-| Go       | chi v5 · GORM v2 · PostgreSQL · golang-migrate · godotenv · slog · air |
+| Go       | chi v5 · GORM v2 · PostgreSQL · golang-migrate · godotenv · slog · air — same addon set as Node/Python (websocket, oauth, api-docs, email, s3, queue, observability) plus a Go-only `--jwt` |
 
 ---
 
@@ -100,6 +101,13 @@ archgen add observability   # OTel + Prometheus + Grafana
 archgen add observability --sentry  # with Sentry error tracking
 archgen add pre-commit      # pre-commit hooks (Python only: ruff + black + mypy)
 archgen add jwt             # JWT auth addon (Go only)
+archgen add websocket       # WebSocket support (Go: gorilla/websocket + JWT)
+archgen add oauth           # OAuth2 routes (Go: golang.org/x/oauth2, Google + GitHub)
+archgen add api-docs        # Swagger UI at /docs + OpenAPI JSON at /openapi.json (Go)
+archgen add email           # SMTP email via stdlib net/smtp (Go)
+archgen add s3              # S3 / R2 / MinIO storage via aws-sdk-go-v2 (Go)
+archgen add queue           # Background queue via asynq + Redis, plus a cmd/worker binary (Go)
+archgen add observability   # OTel + Prometheus for Go; add --sentry for error tracking
 archgen add ci --dry-run    # preview changes without writing
 ```
 

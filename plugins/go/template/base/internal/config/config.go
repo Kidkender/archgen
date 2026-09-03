@@ -11,6 +11,7 @@ type Config struct {
 	Port      string
 	DBUrl     string
 	JWTSecret string
+	// @addon-config-fields
 }
 
 func Load() *Config {
@@ -21,6 +22,7 @@ func Load() *Config {
 		Port:      getEnv("PORT", "8080"),
 		DBUrl:     getEnv("DATABASE_URL", ""),
 		JWTSecret: getEnv("JWT_SECRET", ""),
+		// @addon-config-load
 	}
 }
 

@@ -146,6 +146,13 @@ export async function promptMissingOptions(
         if (lang === "go") {
           return [
             { title: "JWT authentication", value: "jwt", selected: false },
+            { title: "WebSocket", value: "websocket", selected: false },
+            { title: "OAuth2 (Google + GitHub)", value: "oauth", selected: false },
+            { title: "API Docs (Swagger UI)", value: "apiDocs", selected: false },
+            { title: "Email (SMTP)", value: "email", selected: false },
+            { title: "Storage (S3 / R2 / MinIO)", value: "s3", selected: false },
+            { title: "Queue (asynq + Redis)", value: "queue", selected: false },
+            { title: "Observability (OTel + Prometheus)", value: "observability", selected: false },
           ];
         }
         const nodeOnly = lang === "node";
