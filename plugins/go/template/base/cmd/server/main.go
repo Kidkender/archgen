@@ -13,10 +13,13 @@ import (
 	"{{MODULE_PATH}}/internal/config"
 	"{{MODULE_PATH}}/internal/database"
 	"{{MODULE_PATH}}/internal/router"
+	// @addon-imports
 )
 
 func main() {
 	cfg := config.Load()
+
+	// @addon-init
 
 	db, err := database.Connect(cfg)
 	if err != nil {
@@ -54,5 +57,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("server shutdown error", "error", err)
 	}
+	// @addon-shutdown
 	slog.Info("server stopped")
 }
