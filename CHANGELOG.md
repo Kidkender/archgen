@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [1.5.0] - 2026-09-03
 
 ### Added
 - **Go addon parity with Node/Python** — Go now supports the same optional addon set: `--websocket` (gorilla/websocket + JWT), `--oauth` (golang.org/x/oauth2, Google + GitHub, auto-mounted at `/api/v1/oauth`), `--api-docs` (Swagger UI at `/docs` + OpenAPI JSON, auto-mounted), `--email` (stdlib `net/smtp`, no extra dependency), `--s3` (aws-sdk-go-v2, upload/presign/delete/exists, R2/MinIO via `S3_ENDPOINT`), `--queue` (asynq + Redis, including a `cmd/worker` binary), `--observability` (OpenTelemetry OTLP/HTTP tracing + Prometheus `/metrics`, plus the same `observability/` Docker Compose + Grafana dashboard stack as Node/Python), and `--sentry` (paired with `--observability`)
